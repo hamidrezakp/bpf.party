@@ -24,17 +24,17 @@ export const CONTENT_METADATA: ContentMetadata = {
     {
       number: 0,
       slug: "chapter-0",
-      title: "Introduction",
+      title: "مقدمه",
       exercises: [
         {
           slug: "1_theory",
-          title: "Intro to eBPF",
+          title: "معرفی eBPF",
           exerciseId: "theory",
           contentPath: "chapter-0/1_theory",
         },
         {
           slug: "2_platform_overview",
-          title: "Platform overview",
+          title: "مرور پلتفرم",
           exerciseId: "platform-overview",
           codeFile: "1_editor_intro.c",
           contentPath: "chapter-0/2_platform_overview",
@@ -44,32 +44,32 @@ export const CONTENT_METADATA: ContentMetadata = {
     {
       number: 1,
       slug: "chapter-1",
-      title: "Concept familiarization",
+      title: "آشنایی با مفاهیم",
       exercises: [
         {
           slug: "1-intro",
-          title: "Process context",
+          title: "زمینهٔ پردازه",
           exerciseId: "concept-intro",
           codeFile: "1_ambient_intro.c",
           contentPath: "chapter-1/1-intro",
         },
         {
           slug: "2-reading-data",
-          title: "Reading event data",
+          title: "خواندن دادهٔ رویداد",
           exerciseId: "reading-event-data",
           codeFile: "2_event_data.c",
           contentPath: "chapter-1/2-reading-data",
         },
         {
           slug: "3-reading-syscalls",
-          title: "Tracing a system call",
+          title: "ردیابی یک فراخوانی سیستمی",
           exerciseId: "reading-syscalls",
           codeFile: "3_execve_syscall.c",
           contentPath: "chapter-1/3-reading-syscalls",
         },
         {
           slug: "4-reading-syscall-arrays",
-          title: "Reading syscall arrays",
+          title: "خواندن آرایه‌های syscall",
           exerciseId: "read-argv-password",
           codeFile: "4_execve_argv.c",
           contentPath: "chapter-1/4-reading-syscall-arrays",
@@ -79,32 +79,32 @@ export const CONTENT_METADATA: ContentMetadata = {
     {
       number: 2,
       slug: "chapter-2",
-      title: "Stateful eBPF",
+      title: "eBPF با حالت",
       exercises: [
         {
           slug: "intro-maps-and-programs",
-          title: "Maps and multiple programs",
+          title: "نقشه‌ها و چند برنامه",
           exerciseId: "intro-maps-and-programs",
           codeFile: "0_maps_intro.c",
           contentPath: "chapter-2/intro-maps-and-programs",
         },
         {
           slug: "read-buffer-contents",
-          title: "Reading syscall buffers",
+          title: "خواندن بافرهای syscall",
           exerciseId: "read-buffer-contents",
           codeFile: "1_read_buffer.c",
           contentPath: "chapter-2/read-buffer-contents",
         },
         {
           slug: "read-file-password",
-          title: "Cross-syscall state tracking",
+          title: "ردیابی حالت بین syscallها",
           exerciseId: "read-file-password",
           codeFile: "2_read_file_password.c",
           contentPath: "chapter-2/read-file-password",
         },
         {
           slug: "socket-and-connect",
-          title: "Tracking network connections",
+          title: "ردیابی اتصالات شبکه",
           exerciseId: "socket-and-connect",
           codeFile: "3_socket_connect.c",
           contentPath: "chapter-2/socket-and-connect",
@@ -114,18 +114,18 @@ export const CONTENT_METADATA: ContentMetadata = {
     {
       number: 3,
       slug: "chapter-3",
-      title: "Kernel probes",
+      title: "kprobeهای هسته",
       exercises: [
         {
           slug: "tcp-connect",
-          title: "Introduction",
+          title: "مقدمه",
           exerciseId: "tcp-connect",
           codeFile: "0_tcp_connect.c",
           contentPath: "chapter-3/tcp-connect",
         },
         {
           slug: "read-http-password",
-          title: "Reading TCP packets",
+          title: "خواندن بسته‌های TCP",
           exerciseId: "read-http-password",
           codeFile: "2_tcp.c",
           contentPath: "chapter-3/read-http-password",

@@ -10,7 +10,7 @@ export default function FuncDoc({ doc }: FuncDocProps) {
     <details>
       <summary>{doc.description}</summary>
       <div className={styles.function}>
-        Function
+        تابع
         <span className={styles.signature}> {doc.function_name} </span>
         <a
           className={styles.docsLink}
@@ -18,12 +18,12 @@ export default function FuncDoc({ doc }: FuncDocProps) {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Full documentation
+          مستندات کامل
         </a>
         <dl className={styles.args}>
           {doc.args && doc.args.length > 0 && (
             <>
-              <dt>Args:</dt>
+              <dt>پارامترها:</dt>
               {doc.args.map((arg, index) => (
                 <dd key={index}>
                   <code>
@@ -39,11 +39,11 @@ export default function FuncDoc({ doc }: FuncDocProps) {
           <>
             {doc.returns.description.success ? (
               <>
-                <div>On success, returns {doc.returns.description.success}</div>
-                <div>On error, returns {doc.returns.description.error}</div>
+                <div>در صورت موفقیت، {doc.returns.description.success} برمی‌گرداند</div>
+                <div>در صورت خطا، {doc.returns.description.error} برمی‌گرداند</div>
               </>
             ) : (
-              <>Returns {doc.returns.description}</>
+              <>مقدار بازگشتی: {doc.returns.description}</>
             )}
           </>
         )}

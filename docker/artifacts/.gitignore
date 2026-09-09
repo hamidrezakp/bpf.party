@@ -1,0 +1,4 @@
+# Optional local artifacts produced by scripts/build-backend-artifacts.sh
+backend
+rootfs.ext4
+vmlinux

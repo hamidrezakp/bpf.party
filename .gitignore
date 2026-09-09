@@ -5,3 +5,6 @@ vmlinux
 *.o
 sync.sh
 missing_diagnostic/
+firecracker/
+firecracker-spawn/
+.build/

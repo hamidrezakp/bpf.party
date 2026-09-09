@@ -30,7 +30,7 @@ export default function ExerciseNav({
             <ChevronLeft />
           </span>
           <div className={styles.navText}>
-            <div className={styles.navLabel}>Previous</div>
+            <div className={styles.navLabel}>قبلی</div>
             <div className={styles.navTitle}>
               {prevExercise.frontmatter.title}
             </div>
@@ -43,7 +43,7 @@ export default function ExerciseNav({
           className={`${styles.navLink} ${styles.next}`}
         >
           <div className={styles.navText}>
-            <div className={styles.navLabel}>Next</div>
+            <div className={styles.navLabel}>بعدی</div>
             <div className={styles.navTitle}>
               {nextExercise.frontmatter.title}
             </div>

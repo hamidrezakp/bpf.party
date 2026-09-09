@@ -1,10 +1,10 @@
-In the previous exercise, we used a helper to ask "Who is running?".
+در تمرین قبلی از یک helper برای پرسیدن «چه کسی در حال اجراست؟» استفاده کردیم.
 
-Now let's answer questions about the running process by querying the data available to the tracepoint.
+اکنون با پرس‌وجوی داده‌های در دسترس tracepoint، سؤالاتی درباره پردازه در حال اجرا پاسخ می‌دهیم.
 
-For `sched_process_exec`, the kernel provides a structure with specific event data, like the Process ID (PID) and the filename.
+برای `sched_process_exec`، کرنل یک ساختار با داده‌های رویداد مشخص فراهم می‌کند، مانند شناسه پردازه (PID) و نام فایل.
 
-You can find the format of the context that the kernel provides on any Linux computer, by running:
+می‌توانید قالب contextی که کرنل روی هر رایانه لینوکسی فراهم می‌کند را با اجرای این دستور ببینید:
 ```bash
 $ cat /sys/kernel/tracing/events/sched/sched_process_exec/format
 format:
@@ -17,61 +17,61 @@ format:
   pid_t old_pid;                        offset:16;  size:4;
 ```
 
-Alternatively, <kbd>Ctrl</kbd>+<kbd>Click</kbd> on the `trace_event_raw_sched_process_exec` in the editor to see the definition.
+همچنین می‌توانید <kbd>Ctrl</kbd>+<kbd>Click</kbd> روی `trace_event_raw_sched_process_exec` در ویرایشگر بزنید تا تعریف را ببینید.
 
 ## The challenge
-Extract the **PID** and the **filename** of the program being executed, directly from the event data.
+**PID** و **filename** برنامه در حال اجرا را مستقیماً از داده رویداد استخراج کنید.
 
-Getting the PID is straightforward in this case, we can just read it:
+گرفتن PID در این مورد ساده است، می‌توانیم مستقیماً آن را بخوانیم:
 ```c
 int pid = ctx->pid;
 DEBUG_NUM("PID", pid);
 ```
 
-Reading the filename, however, is more involved. If you look at the type declaration above,
-it is `__data_loc char[]`.
+خواندن filename پیچیده‌تر است. اگر به تعریف نوع بالا نگاه کنید،
+نوع آن `__data_loc char[]` است.
 
-This is not a regular pointer; the `__data_loc` prefix means the field just contains the **encoded location** of the string, not the string itself.
+این یک pointer معمولی نیست؛ پیشوند `__data_loc` یعنی فیلد فقط **محل کدگذاری‌شده** رشته را دارد، نه خود رشته را.
 
-Basically, the filename field contains a 32-bit integer that packs two pieces of information:
+به‌طور خلاصه، فیلد filename یک عدد ۳۲ بیتی است که دو بخش اطلاعات را در خود جای می‌دهد:
 
-  - Lower 16 bits: The Offset (How far away the string is from the start of the structure)
-  - Upper 16 bits: The Length (How long the string is)
+  - ۱۶ بیت پایین: Offset (فاصله رشته از ابتدای ساختار)
+  - ۱۶ بیت بالا: Length (طول رشته)
 
-To get the actual string, we need to decode its location:
+برای گرفتن رشته واقعی باید محل آن را decode کنیم:
 
-  1. Read the `__data_loc_filename` field
-  2. Mask the lower 16 bits (`val & 0xFFFF`) to get the offset
-  3. Right shift the upper bits (`val >> 16`) to get the length 
-  4. Add that offset to the `ctx` pointer
+  1. فیلد `__data_loc_filename` را بخوانید
+  2. ۱۶ بیت پایین را mask کنید (`val & 0xFFFF`) تا offset را بگیرید
+  3. بیت‌های بالا را right shift کنید (`val >> 16`) تا length را بگیرید
+  4. آن offset را به pointer `ctx` اضافه کنید
 
-However, we can't really read the data directly from the calculated address:
+اما نمی‌توانیم داده را مستقیماً از آدرس محاسبه‌شده بخوانیم:
 
 ```c
 char* fname = (void *)ctx + off;
 DEBUG_STR("Filename", fname);
 ```
 
-Why not?
+چرا نه؟
 
-As we saw in the intro, eBPF programs run in a sandbox. Calculated addresses like this one (`ctx + off`) point to Kernel memory (not the program's stack).
+همان‌طور که در مقدمه دیدیم، برنامه‌های eBPF در یک sandbox اجرا می‌شوند. آدرس‌های محاسبه‌شده مثل این (`ctx + off`) به حافظه کرنل اشاره می‌کنند (نه stack برنامه).
 
-When we call `DEBUG_STR` with a non-local address, the kernel helpers will refuse to read from that memory range, leaving the "DEBUG" memory uninitialized.
+وقتی `DEBUG_STR` را با آدرسی غیرمحلی فراخوانی می‌کنیم، helperهای کرنل از خواندن آن محدوده حافظه خودداری می‌کنند و حافظه «DEBUG» مقداردهی‌نشده می‌ماند.
 
-You can try it though! It will not crash the kernel, instead, it will return something like: `�����`.
+می‌توانید امتحان کنید! کرنل crash نمی‌کند، بلکه چیزی شبیه `�����` برمی‌گرداند.
 
-To solve this, we need to copy that data to "local memory" (stack) using the [bpf_probe_read_kernel_str](https://docs.ebpf.io/linux/helper-function/bpf_probe_read_kernel_str/) helper.
+برای حل این مشکل باید آن داده را با helper [bpf_probe_read_kernel_str](https://docs.ebpf.io/linux/helper-function/bpf_probe_read_kernel_str/) به «حافظه محلی» (stack) کپی کنیم.
 
 ```c
 char fname[32];
 bpf_probe_read_kernel_str(fname, sizeof(fname), (void *)ctx + off);
 ```
 
-After this, the `fname` buffer will be populated, and we can call `DEBUG_STR` on it.
+بعد از این، بافر `fname` پر می‌شود و می‌توانیم `DEBUG_STR` را روی آن فراخوانی کنیم.
 
 ### Your task
 
-If you added `DEBUG_STR`/`DEBUG_NUM` as explained above, you should see multiple standard programs, but there's one that stands out. Use `SUBMIT_STR_LEN(buff, len)` to submit it.
+اگر `DEBUG_STR`/`DEBUG_NUM` را همان‌طور که توضیح داده شد اضافه کرده باشید، چند برنامه معمولی می‌بینید، اما یکی متمایز است. با `SUBMIT_STR_LEN(buff, len)` آن را ارسال کنید.
 
 import QuickReference from '../../../components/QuickReference.tsx';
 

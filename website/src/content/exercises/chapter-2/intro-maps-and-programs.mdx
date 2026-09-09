@@ -1,16 +1,16 @@
-So far, each exercise has used a single eBPF program. But what if we need to correlate information across different events?
+تا اینجا، هر تمرین از یک برنامه eBPF استفاده کرده است. اما اگر بخواهیم اطلاعات را بین رویدادهای مختلف همبسته کنیم چه؟
 
-For example: When a process **starts**, we know its name. When it **exits**, we know its exit code. What if we want to know the **name** of processes that exit with a specific code?
+مثلاً: وقتی یک فرایند **شروع** می‌شود، نام آن را می‌دانیم. وقتی **خارج** می‌شود، کد خروج آن را می‌دانیم. اگر بخواهیم **نام** فرایندهایی را که با کد خاصی خارج می‌شوند بفهمیم چه؟
 
-## Multiple eBPF programs
+## چند برنامه eBPF
 
-You can define **multiple programs in one file**, each hooking into different events.
+می‌توانید **چند برنامه در یک فایل** تعریف کنید؛ هر کدام به رویدادهای متفاوتی متصل می‌شوند.
 
-Each program is independent and runs when its own event triggers.
+هر برنامه مستقل است و وقتی رویداد خودش فعال شود اجرا می‌شود.
 
-A common case that requires multiple programs is the `entry`+`exit` event pair.
+یک مورد رایج که به چند برنامه نیاز دارد، جفت رویداد `entry`+`exit` است.
 
-At **entry**, we have the input (arguments, process info).
+در **ورود**، ورودی را داریم (آرگومان‌ها، اطلاعات فرایند).
 
 ```c
 SEC("tracepoint/sched/sched_process_exec")
@@ -19,7 +19,7 @@ int on_process_start(struct trace_event_raw_sched_process_exec *ctx) {
 }
 ```
 
-At **exit**, we have the output (return values, exit codes).
+در **خروج**، خروجی را داریم (مقادیر بازگشتی، کدهای خروج).
 
 ```c
 SEC("tracepoint/syscalls/sys_enter_exit")
@@ -29,15 +29,15 @@ int on_process_exit(struct trace_event_raw_sys_enter *ctx) {
 }
 ```
 
-To correlate both events, we need to persist data between program invocations.
+برای همبسته‌کردن هر دو رویداد، باید داده را بین فراخوانی‌های برنامه نگه داریم.
 
-## Persisting state
+## نگه‌داری وضعیت
 
-**Maps** are data structures that persist between eBPF program invocations.
+**Mapها** ساختارهای داده‌ای هستند که بین فراخوانی‌های برنامه eBPF باقی می‌مانند.
 
-In eBPF, there are [many kinds](https://docs.ebpf.io/linux/map-type/) of maps. For this exercise, we'll use hash maps (key-value store).
+در eBPF، [انواع زیادی](https://docs.ebpf.io/linux/map-type/) map وجود دارد. در این تمرین از hash map (ذخیره کلید-مقدار) استفاده می‌کنیم.
 
-Map usage is straightforward. First, declare a struct with these `__uint`/`__type` macros.
+استفاده از map ساده است. ابتدا یک struct با این ماکروهای `__uint`/`__type` تعریف کنید.
 
 ```c
 struct {
@@ -48,14 +48,14 @@ struct {
 } my_map SEC(".maps");
 ```
 
-To store, you pass a pointer to the data, which will be copied:
+برای ذخیره‌کردن، اشاره‌گری به داده را می‌دهید که کپی می‌شود:
 ```c
 u64 key = 12345;
 char value[16] = "hello";
 bpf_map_update_elem(&my_map, &key, value, BPF_ANY);
 ```
 
-To retrieve a pointer to the value:
+برای گرفتن اشاره‌گر به مقدار:
 ```c
 char *stored = bpf_map_lookup_elem(&my_map, &key);
 if (!stored) { // Key not found
@@ -64,20 +64,20 @@ if (!stored) { // Key not found
 // Use `stored` (it's a pointer to the char[16] array)
 ```
 
-To delete an entry from the map:
+برای حذف یک ورودی از map:
 ```c
 bpf_map_delete_elem(&my_map, &key);
 ```
 
-## The challenge
+## چالش
 
-A program named `exit_with_code` will run and exit. Submit its exit code using `SUBMIT_NUM(code)`.
+یک برنامه به نام `exit_with_code` اجرا می‌شود و خارج می‌شود. کد خروج آن را با `SUBMIT_NUM(code)` ارسال کنید.
 
-The starter code has most of the logic already, this is an introduction chapter after all.
+کد اولیه بیشتر منطق را از قبل دارد؛ این فصل در نهایت مقدمه است.
 
-## Your task
+## وظیفه شما
 
-Check if the process name matches `"exit_with_code"`, and if so, submit the exit code.
+بررسی کنید آیا نام فرایند با `"exit_with_code"` مطابقت دارد؛ اگر بله، کد خروج را ارسال کنید.
 
 
 import QuickReference from '../../../components/QuickReference.tsx';

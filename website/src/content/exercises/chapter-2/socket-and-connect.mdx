@@ -1,29 +1,29 @@
-Like `open()` and `read()`, network connections have both an attempt (entry) and a result (exit). To correlate these events, we store data at entry and retrieve it at exit.
+مثل `open()` و `read()`، اتصال‌های شبکه هم یک تلاش (ورود) و یک نتیجه (خروج) دارند. برای همبسته‌کردن این رویدادها، در ورود داده را ذخیره می‌کنیم و در خروج آن را می‌گیریم.
 
-## The connect syscall
+## syscall connect
 
 ```c
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 ```
 
-At **entry** (`sys_enter_connect`):
-- `ctx->args[0]` = socket file descriptor
-- `ctx->args[1]` = pointer to `sockaddr` structure (user space)
+در **ورود** (`sys_enter_connect`):
+- `ctx->args[0]` = file descriptor سوکت
+- `ctx->args[1]` = اشاره‌گر به ساختار `sockaddr` (user space)
 
-At **exit** (`sys_exit_connect`):
-- `ctx->ret == 0` → Connection succeeded
-- `ctx->ret < 0` → Connection failed (errno value)
+در **خروج** (`sys_exit_connect`):
+- `ctx->ret == 0` → اتصال موفق بود
+- `ctx->ret < 0` → اتصال ناموفق بود (مقدار errno)
 
-## Reading the sockaddr structure
+## خواندن ساختار sockaddr
 
-The `addr` pointer at `ctx->args[1]` points to user space memory. You must use `bpf_probe_read_user()` to safely copy it:
+اشاره‌گر `addr` در `ctx->args[1]` به حافظه user space اشاره می‌کند. برای کپی امن باید از `bpf_probe_read_user()` استفاده کنید:
 
 ```c
 struct sockaddr_in addr;
 bpf_probe_read_user(&addr, sizeof(addr), (void *)ctx->args[1]);
 ```
 
-For IPv4 connections (`sin_family == 2`):
+برای اتصال‌های IPv4 (`sin_family == 2`):
 
 ```c
 struct sockaddr_in {
@@ -34,21 +34,21 @@ struct sockaddr_in {
 };
 ```
 
-Port and IP are in **network byte order** ([big-endian](https://en.wikipedia.org/wiki/Endianness)). Convert to host order with the helper:
+پورت و IP در **ترتیب بایت شبکه** ([big-endian](https://en.wikipedia.org/wiki/Endianness)) هستند. با helper به ترتیب بایت host تبدیل کنید:
 
 ```c
 u16 port = bpf_ntohs(addr.sin_port);
 ```
 
-## The challenge
+## چالش
 
-A program attempts to connect to multiple ports. Most connections fail, but one succeeds. **Submit the port of the connection that succeeds.**
+یک برنامه سعی می‌کند به چند پورت متصل شود. بیشتر اتصال‌ها ناموفق‌اند، اما یکی موفق می‌شود. **پورت اتصال موفق را ارسال کنید.**
 
-### Your task:
-1. At `connect` entry: Read the `sockaddr_in` structure and store the port in a temporary map
-2. At `connect` exit: Check if the connection succeeded (`ret == 0`), then submit the port
+### وظیفه شما:
+1. در ورود `connect`: ساختار `sockaddr_in` را بخوانید و پورت را در یک map موقت ذخیره کنید
+2. در خروج `connect`: بررسی کنید اتصال موفق بوده (`ret == 0`)، سپس پورت را ارسال کنید
 
-The starter code has the structure you need to follow.
+کد اولیه ساختاری را دارد که باید دنبال کنید.
 
 
 

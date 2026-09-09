@@ -2,35 +2,35 @@ import Braces from "@lucide/astro/icons/braces";
 import ControlButton from "../../../components/ControlButton.tsx"
 import Keyboard from "lucide-react/dist/esm/icons/keyboard";
 
-This platform provides a configured environment and exercises to help you learn eBPF.
+این پلتفرم یک محیط پیکربندی‌شده و تمرین‌هایی برای یادگیری eBPF فراهم می‌کند.
 
-The editor compiles your code locally as you type, but you can disable this by clicking the <ControlButton style={{display: "inline"}}><Braces size={14} /></ControlButton> button. Compilation errors are highlighted inline.
+ویرایشگر کد شما را به‌صورت محلی هم‌زمان با تایپ کامپایل می‌کند، اما می‌توانید با کلیک روی دکمه <ControlButton style={{display: "inline"}}><Braces size={14} /></ControlButton> این قابلیت را غیرفعال کنید. خطاهای کامپایل به‌صورت inline مشخص می‌شوند.
 
-Try typing into the editor and see how it reacts, then click 'Run' to execute your code on the server.
+در ویرایشگر تایپ کنید و ببینید چگونه واکنش نشان می‌دهد، سپس روی «Run» کلیک کنید تا کدتان روی سرور اجرا شود.
 
-If you prefer 'vim mode', the  <ControlButton style={{display: "inline"}}><Keyboard size={14} /></ControlButton> button will toggle it.
+اگر «vim mode» را ترجیح می‌دهید، دکمه <ControlButton style={{display: "inline"}}><Keyboard size={14} /></ControlButton> آن را toggle می‌کند.
 
 ## Hotkeys
 
-- <kbd>Ctrl</kbd>+<kbd>Enter</kbd> runs the code.
-- <kbd>Ctrl</kbd>+<kbd>Click</kbd> on type definitions (`my_struct`, `trace_event_raw_sched_process_exec`) shows a type definition popup
+- <kbd>Ctrl</kbd>+<kbd>Enter</kbd> کد را اجرا می‌کند.
+- <kbd>Ctrl</kbd>+<kbd>Click</kbd> روی تعریف نوع‌ها (`my_struct`, `trace_event_raw_sched_process_exec`) پنجره تعریف نوع را نشان می‌دهد
 
 ## Debugging utilities
 
-There are multiple `DEBUG_` macros to display data from your programs.
-Each macro takes a label (a string constant) as its first argument.
+چندین ماکرو `DEBUG_` برای نمایش داده از برنامه‌های شما وجود دارد.
+هر ماکرو آرگومان اول خود را به‌صورت یک label (ثابت رشته‌ای) می‌گیرد.
 
-- `DEBUG_NUM(label, num)` can take any number, like `u32` or `ssize_t`
-- `DEBUG_STR(label, buf)` requires a fixed-size buf, like `char[64]`
-- `DEBUG_STR_LEN(label, ptr, len)` can take any pointer, will debug `len` bytes
-- `DEBUG_STRUCT(label, struct)` can take any struct _by value_
+- `DEBUG_NUM(label, num)` هر عددی را می‌پذیرد، مانند `u32` یا `ssize_t`
+- `DEBUG_STR(label, buf)` به buf با اندازه ثابت نیاز دارد، مانند `char[64]`
+- `DEBUG_STR_LEN(label, ptr, len)` هر pointer را می‌پذیرد و `len` بایت را debug می‌کند
+- `DEBUG_STRUCT(label, struct)` هر struct را _به‌صورت مقدار_ می‌پذیرد
 
 ## Submitting answers
 
-To solve the exercises, you will need to submit answers directly from your code, using `SUBMIT_NUM(answer)`, `SUBMIT_STR(answer)` or `SUBMIT_STR_LEN(answer, len)`.
+برای حل تمرین‌ها باید پاسخ‌ها را مستقیماً از کد خود با `SUBMIT_NUM(answer)`، `SUBMIT_STR(answer)` یا `SUBMIT_STR_LEN(answer, len)` ارسال کنید.
 
-Your eBPF program triggers on multiple events, so you'll need to guard your `SUBMIT_X` calls, as multiple submissions invalidate all answers.
+برنامه eBPF شما روی چندین رویداد فعال می‌شود، بنابراین باید فراخوانی‌های `SUBMIT_X` خود را محافظت کنید، چون چند ارسال همه پاسخ‌ها را باطل می‌کند.
 
-When using `SUBMIT_STR`, trailing null bytes are trimmed, but trailing garbage is not. Use the `SUBMIT_STR_LEN` variant when you can't guarantee null termination. 
+وقتی از `SUBMIT_STR` استفاده می‌کنید، بایت‌های null انتهایی trim می‌شوند، اما داده‌های اضافی انتهایی نه. وقتی نمی‌توانید null termination را تضمین کنید، از variant `SUBMIT_STR_LEN` استفاده کنید.
 
-Solve this exercise by uncommenting `SUBMIT_STR("the answer");`
+این تمرین را با uncomment کردن `SUBMIT_STR("the answer");` حل کنید.

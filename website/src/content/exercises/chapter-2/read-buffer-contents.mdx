@@ -1,72 +1,72 @@
-In the previous exercise, we learned how to use maps to share data between multiple eBPF programs.
+در تمرین قبلی، یاد گرفتیم چطور با mapها داده را بین چند برنامه eBPF به اشتراک بگذاریم.
 
-Now let's apply this to capturing data from syscall buffers. Syscalls have two tracepoint events: `enter` (before it starts) and `exit` (after it finishes). We'll need to correlate data between both.
+حالا این را برای گرفتن داده از بافرهای syscall به کار می‌بریم. syscallها دو رویداد tracepoint دارند: `enter` (قبل از شروع) و `exit` (بعد از پایان). باید داده را بین هر دو همبسته کنیم.
 
-## The read syscall
+## syscall read
 
-Looking at the [read syscall](https://man7.org/linux/man-pages/man2/read.2.html):
+با نگاه به [syscall read](https://man7.org/linux/man-pages/man2/read.2.html):
 
 ```c
 ssize_t read(int fd, void *buf, size_t count);
 ```
 
-If we hook into `sys_enter_read` and `sys_exit_read`:
+اگر به `sys_enter_read` و `sys_exit_read` متصل شویم:
 
-- At **entry**: we have access to the arguments, but the buffer is still empty.
-- At **exit**: the buffer is filled with data, but we only have access to the return value.
+- در **ورود**: به آرگومان‌ها دسترسی داریم، اما بافر هنوز خالی است.
+- در **خروج**: بافر با داده پر شده، اما فقط به مقدار بازگشتی دسترسی داریم.
 
-To correlate both, we capture the buffer pointer at entry using a map, then read the filled buffer at exit.
+برای همبسته‌کردن هر دو، در ورود اشاره‌گر بافر را با map ذخیره می‌کنیم، سپس در خروج بافر پرشده را می‌خوانیم.
 
-## Storing the buffer address at entry
+## ذخیره آدرس بافر در ورود
 
-First, we need to save the buffer pointer when the syscall starts. The buffer address is in `ctx->args[1]`.
+ابتدا باید وقتی syscall شروع می‌شود، اشاره‌گر بافر را ذخیره کنیم. آدرس بافر در `ctx->args[1]` است.
 
-We'll store this address in a map, using the PID as the key so we can look it up later:
+این آدرس را در یک map ذخیره می‌کنیم و PID را به‌عنوان کلید استفاده می‌کنیم تا بعداً بتوانیم آن را پیدا کنیم:
 
 ```c
 u64 buf_addr = ctx->args[1];
 bpf_map_update_elem(&read_buffers, &pid, &buf_addr, BPF_ANY);
 ```
 
-Note that we're storing the address of the buffer as a `u64` value.
+توجه کنید که آدرس بافر را به‌عنوان مقدار `u64` ذخیره می‌کنیم.
 
-## Reading the buffer at exit
+## خواندن بافر در خروج
 
-Now in the exit program, we need to retrieve and read the buffer that was filled by the syscall.
+حالا در برنامه خروج، باید بافری را که syscall پر کرده گرفته و بخوانیم.
 
-First, check if the read succeeded:
+ابتدا بررسی کنید read موفق بوده:
 
 ```c
 size_t count = ctx->ret;
 if (count <= 0) return 0;
 ```
-The return value `ctx->ret` tells you how many bytes were read.
+مقدار بازگشتی `ctx->ret` می‌گوید چند بایت خوانده شده.
 
-Next, look up the saved buffer address using the PID as the key:
+بعد، آدرس بافر ذخیره‌شده را با PID به‌عنوان کلید پیدا کنید:
 ```c
 u64 *buf_ptr = bpf_map_lookup_elem(&read_buffers, &pid);
 if (!buf_ptr) return 0;
 ```
-This returns a pointer to the stored value (`u64*`).
+این یک اشاره‌گر به مقدار ذخیره‌شده (`u64*`) برمی‌گرداند.
 
-To read the buffer, create a local buffer and use `bpf_probe_read_user`. You'll need to dereference buf_ptr to get the actual buffer address:
+برای خواندن بافر، یک بافر محلی بسازید و از `bpf_probe_read_user` استفاده کنید. باید `buf_ptr` را dereference کنید تا آدرس واقعی بافر را بگیرید:
 
 ```c
 char local_buf[32];
 if (count > 32) count = 32;
 bpf_probe_read_user(local_buf, count, (void *)*buf_ptr);
 ```
-Notice the `*buf_ptr` - we're dereferencing the pointer to get the buffer address we stored earlier.
+به `*buf_ptr` توجه کنید — اشاره‌گر را dereference می‌کنیم تا آدرس بافری که قبلاً ذخیره کردیم را بگیریم.
 
 
-## The challenge
+## چالش
 
-A program reads a file containing a password. Submit the contents of the entire file with `SUBMIT_STR_LEN`.
+یک برنامه فایلی حاوی رمز عبور را می‌خواند. محتوای کامل فایل را با `SUBMIT_STR_LEN` ارسال کنید.
 
 
-### Your task
+### وظیفه شما
 
-Complete both the entry and exit programs to capture and submit the buffer contents.
+هر دو برنامه ورود و خروج را کامل کنید تا محتوای بافر را بگیرید و ارسال کنید.
 
 import QuickReference from '../../../components/QuickReference.tsx';
 

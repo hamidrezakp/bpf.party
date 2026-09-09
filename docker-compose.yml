@@ -1,0 +1,25 @@
+services:
+  backend:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+      args:
+        FC_VERSION: v1.16.1
+        KERNEL_VERSION: "6.18.2"
+    privileged: true
+    devices:
+      - /dev/kvm
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      vm.nr_hugepages: 128
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.website
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

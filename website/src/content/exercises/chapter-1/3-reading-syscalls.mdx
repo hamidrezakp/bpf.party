@@ -1,16 +1,16 @@
 import ExecveArgs from '../../../components/ExecveArgs.tsx';
 
-In the previous exercises, we hooked into the scheduler (`sched_process_exec`). This event fires *after* the kernel has loaded a binary and populated its internal structures.
+در تمرین‌های قبلی به scheduler (`sched_process_exec`) hook زدیم. این رویداد *بعد از* بارگذاری باینری توسط کرنل و پر کردن ساختارهای درونی آن فعال می‌شود.
 
-But what happens *before* that? When a program like `bash` wants to run `ls`, it makes a request to the kernel through the `execve` system call.
+اما *قبل از* آن چه می‌شود؟ وقتی برنامه‌ای مثل `bash` می‌خواهد `ls` را اجرا کند، از طریق system call `execve` به کرنل درخواست می‌دهد.
 
-System calls are different from the specific tracepoints we've used so far. They use generic `entry` and `exit` events that work for all syscalls.
+System callها با tracepointهای مشخصی که تا الان استفاده کردیم متفاوت‌اند. از رویدادهای generic `entry` و `exit` استفاده می‌کنند که برای همه syscallها کار می‌کنند.
 
 ## The generic syscall structure
 
-Because there are _hundreds_ of system calls (`open`, `write`, `execve`...), each with its own set of arguments, the kernel uses a generic structure for tracepoints.
+چون *صدها* system call (`open`, `write`, `execve`...) وجود دارد، هر کدام با مجموعه آرگومان‌های خود، کرنل برای tracepointها از یک ساختار generic استفاده می‌کند.
 
-On entry events, we receive a context with type `struct trace_event_raw_sys_enter`:
+در رویدادهای entry، contextی با نوع `struct trace_event_raw_sys_enter` دریافت می‌کنیم:
 
 ```c
 struct trace_event_raw_sys_enter {
@@ -20,21 +20,21 @@ struct trace_event_raw_sys_enter {
 };
 ```
 
-We don't get convenient fields like `name` or `pid` -- all we are getting is the syscall number (`id`) and an array of integers, `args[6]`, which are the arguments to the system call.
+فیلدهای راحتی مثل `name` یا `pid` نداریم — فقط شماره syscall (`id`) و آرایه‌ای از اعداد صحیح، `args[6]`، که آرگومان‌های system call هستند.
 
-Why 6? Because that's the maximum number of arguments that syscalls are allowed to take.
+چرا ۶؟ چون حداکثر تعداد آرگومان‌هایی است که syscallها می‌توانند داشته باشند.
 
-We _also_ don't get any types! All arguments are `long unsigned int` (`u64`), and it's up to us to interpret them properly (as pointers, structs, signed numbers, or even `u64`!).
+همچنین *هیچ* نوعی هم نداریم! همه آرگومان‌ها `long unsigned int` (`u64`) هستند و تفسیر درست آن‌ها (به‌صورت pointer، struct، اعداد signed یا حتی `u64`!) به خودمان بستگی دارد.
 
-To know the type and meaning of each argument, you can consult the [manual page](https://man7.org/linux/man-pages/man2/execve.2.html), which shows the signature:
+برای دانستن نوع و معنای هر آرگومان می‌توانید به [صفحه manual](https://man7.org/linux/man-pages/man2/execve.2.html) مراجعه کنید که امضا را نشان می‌دهد:
 
 ```c
 int execve(const char *filename, char *const argv[], char *const envp[]);
 ```
 
-Since `filename` is the first argument, it's located at `ctx->args[0]`. The `args` array stores it as an `unsigned long`, so we'll need to cast it to `const char *`.
+چون `filename` آرگومان اول است، در `ctx->args[0]` قرار دارد. آرایه `args` آن را به‌صورت `unsigned long` ذخیره می‌کند، پس باید به `const char *` cast کنیم.
 
-Something like this:
+چیزی شبیه این:
 
 <ExecveArgs
 label="ctx->args"
@@ -63,25 +63,25 @@ args={[
 ]}
 />
 
-But there's one more detail to handle.
+اما یک جزئیات دیگر هم باید در نظر گرفته شود.
 
 
 ### On address spaces
 
-`ctx->args[0]` points to memory owned by the calling process (e.g., `bash`), which is **user space** memory.
+`ctx->args[0]` به حافظه‌ای که متعلق به پردازه فراخواننده است (مثلاً `bash`) اشاره می‌کند، یعنی حافظه **فضای کاربر**.
 
-The kernel enforces strict separation between user and kernel memory for security. This means we cannot use the kernel-space helpers we've used before (like `bpf_probe_read_kernel_str`) to read this data. Instead, we must use [bpf_probe_read_user_str(dst, size, src)](https://docs.ebpf.io/linux/helper-function/bpf_probe_read_user_str/).
+کرنل برای امنیت جداسازی سخت بین حافظه کاربر و کرنل را اعمال می‌کند. یعنی نمی‌توانیم helperهای فضای کرنلی که قبلاً استفاده کردیم (مثل `bpf_probe_read_kernel_str`) را برای خواندن این داده به کار ببریم. به‌جای آن باید از [bpf_probe_read_user_str(dst, size, src)](https://docs.ebpf.io/linux/helper-function/bpf_probe_read_user_str/) استفاده کنیم.
 
 ## Your task
 
-1. Construct the filename pointer from `ctx->args[0]`.
-2. Read the string from **User Space** into a local buffer.
+1. pointer filename را از `ctx->args[0]` بسازید.
+2. رشته را از **فضای کاربر** به یک بافر محلی بخوانید.
 
-If you use `DEBUG_STR` on the buffer, you should see multiple programs being executed.
+اگر `DEBUG_STR` را روی بافر استفاده کنید، چند برنامه در حال اجرا را می‌بینید.
 
-Remember that you can only submit _one_ answer with `SUBMIT_STR_LEN`, so you will need to filter them like we did in the previous exercises.
+به یاد داشته باشید که فقط *یک* پاسخ با `SUBMIT_STR_LEN` می‌توانید ارسال کنید، پس باید مثل تمرین‌های قبلی آن‌ها را فیلتر کنید.
 
-You can get `len` from the return value of `bpf_probe_read_user_str` -- it returns the number of bytes copied.
+می‌توانید `len` را از مقدار بازگشتی `bpf_probe_read_user_str` بگیرید — تعداد بایت‌های کپی‌شده را برمی‌گرداند.
 
 import QuickReference from '../../../components/QuickReference.tsx';
 

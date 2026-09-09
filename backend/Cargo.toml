@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-firecracker-spawn = { version = "0.1.0", path = "../../firecracker-spawn" }
+firecracker-spawn = { path = "../firecracker-spawn" }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0"
 toml = "0.8"
@@ -23,5 +23,4 @@ strum = { version = "0.27.2", features = ["derive"] }
 annotate-snippets = "0.12.16"
 
 [patch.crates-io]
-#kvm-bindings = { git = "https://github.com/firecracker-microvm/kvm-bindings", tag = "v0.7.0-2", features = ["fam-wrappers"] }
-#event-manager = { git = "https://github.com/firecracker-microvm/kvm-bindings", tag = "v0.4.0" }
+kvm-bindings = { git = "https://github.com/firecracker-microvm/kvm-bindings", tag = "v0.7.0-2", features = ["fam-wrappers"] }

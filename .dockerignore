@@ -1,0 +1,14 @@
+.git
+.cursor
+.build
+firecracker
+firecracker-spawn
+website/node_modules
+website/dist
+**/target
+rootfs
+rootfs.ext4
+vmlinux
+docker/artifacts/backend
+docker/artifacts/rootfs.ext4
+docker/artifacts/vmlinux

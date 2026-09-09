@@ -1,9 +1,9 @@
 
-We've used tracepoints to hook into syscalls. Now let's learn **kprobes** - attaching to internal kernel functions.
+از tracepointها برای hook زدن به syscallها استفاده کردیم. حالا بیایید **kprobe**ها را یاد بگیریم — اتصال به توابع داخلی کرنل.
 
 ## Kprobes vs tracepoints
 
-**Tracepoints** are stable, documented hooks at specific kernel events (syscall entry/exit, scheduling, etc.). They provide structured context:
+**Tracepoint**ها hookهای پایدار و مستند در رویدادهای مشخص کرنل هستند (ورود/خروج syscall، زمان‌بندی و غیره). زمینه‌ای ساختاریافته ارائه می‌دهند:
 ```c
 SEC("tracepoint/syscalls/sys_enter_connect")
 int trace(struct trace_event_raw_sys_enter *ctx) {
@@ -11,17 +11,17 @@ int trace(struct trace_event_raw_sys_enter *ctx) {
 }
 ```
 
-**Kprobes** attach to any kernel function by name.
+**Kprobe**ها به هر تابع کرنل از طریق نام وصل می‌شوند.
 
-This mechanism is more flexible but kprobes are not part of the kernel's stable API, so they can change between kernel versions. On top of that, they do not provide a defined 'context', we need to get the argument types and order from the kernel sources.
+این مکانیزم انعطاف‌پذیرتر است، اما kprobeها بخشی از API پایدار کرنل نیستند و می‌توانند بین نسخه‌های کرنل تغییر کنند. علاوه بر این، 'context' تعریف‌شده‌ای ارائه نمی‌دهند؛ باید نوع و ترتیب آرگومان‌ها را از سورس کرنل پیدا کنیم.
 
 ## Why kprobes?
 
-Tracepoints expose specific events. Kprobes let us hook deeper into kernel internals. For example, `connect()` syscall returns immediately for non-blocking sockets, but `tcp_finish_connect()` is called when the TCP handshake actually completes.
+Tracepointها رویدادهای مشخص را در معرض قرار می‌دهند. Kprobeها به ما اجازه می‌دهند عمیق‌تر به درون کرنل hook بزنیم. مثلاً syscall `connect()` برای سوکت‌های non-blocking بلافاصله برمی‌گردد، اما `tcp_finish_connect()` زمانی فراخوانی می‌شود که دست‌دهی TCP واقعاً کامل شود.
 
 ## Accessing function arguments
 
-Kprobes receive `struct pt_regs *ctx` - raw CPU registers. Use macros to extract the arguments:
+Kprobeها `struct pt_regs *ctx` دریافت می‌کنند — رجیسترهای خام CPU. از ماکروها برای استخراج آرگومان‌ها استفاده کنید:
 
 ```c
 PT_REGS_PARM1(ctx)  // First parameter
@@ -30,24 +30,23 @@ PT_REGS_PARM3(ctx)  // Third parameter
 // up to 8
 ```
 
-We can find the signature for `tcp_finish_connect` in `net/ipv4/tcp_input.c`, which is
+امضای `tcp_finish_connect` را می‌توان در `net/ipv4/tcp_input.c` پیدا کرد که عبارت است از
 ```c
 void tcp_finish_connect(struct sock *sk, struct sk_buff *skb);
 ```
 
-And so, to get access to the `struct sock*` we need to cast the **first** argument:
+بنابراین برای دسترسی به `struct sock*` باید **اولین** آرگومان را cast کنیم:
 ```c
 struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
 ```
 
 ## The challenge
 
-A program connects to a remote server. The `connect()` syscall returns `-EINPROGRESS` (non-blocking), but the connection completes successfully.
+برنامه‌ای به سرور راه‌دور وصل می‌شود. syscall `connect()` مقدار `-EINPROGRESS` (non-blocking) برمی‌گرداند، اما اتصال با موفقیت کامل می‌شود.
 
 ### Socket properties
 
-You can read the socket's properties with `bpf_probe_read_kernel`. Here
-are the relevant fields:
+می‌توانید ویژگی‌های سوکت را با `bpf_probe_read_kernel` بخوانید. فیلدهای مرتبط:
 
 ```c
 struct sock {
@@ -62,12 +61,12 @@ struct sock_common {
 };
 ```
 
-Remember that ports are in big endian, so you'll need to use `bpf_ntohs` to convert it.
+به یاد داشته باشید پورت‌ها big endian هستند، پس باید از `bpf_ntohs` برای تبدیل استفاده کنید.
 
 
 ### Your task
 
-Submit the destination port.
+پورت مقصد را ارسال کنید.
 
 import QuickReference from '../../../components/QuickReference.tsx';
 

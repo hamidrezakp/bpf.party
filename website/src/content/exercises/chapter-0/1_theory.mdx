@@ -1,58 +1,58 @@
-eBPF is a Linux mechanism that allows you to hook custom code directly into kernel events.
+eBPF مکانیزمی در لینوکس است که به شما اجازه می‌دهد کد سفارشی را مستقیماً به رویدادهای کرنل متصل (hook) کنید.
 
-When an event triggers, the kernel pauses its normal execution, runs your eBPF program, and then continues. This happens at the kernel level, giving you visibility into system behavior that would be impossible from user space alone.
+وقتی یک رویداد فعال می‌شود، کرنل اجرای عادی خود را متوقف می‌کند، برنامه eBPF شما را اجرا می‌کند و سپس ادامه می‌دهد. این کار در سطح کرنل انجام می‌شود و دیدی به رفتار سیستم می‌دهد که از فضای کاربر به‌تنهایی غیرممکن است.
 
-Examples of events you can hook:
-- A process opens a file
-- A program is executed
-- A network packet arrives
+نمونه‌هایی از رویدادهایی که می‌توانید به آن‌ها hook بزنید:
+- یک پردازه فایلی را باز می‌کند
+- یک برنامه اجرا می‌شود
+- یک بسته شبکه می‌رسد
 
-This makes eBPF powerful for observability, security monitoring, and network filtering without modifying the kernel itself or loading kernel modules.
+این eBPF را برای observability، نظارت امنیتی و فیلترینگ شبکه — بدون تغییر در خود کرنل یا بارگذاری ماژول‌های کرنل — قدرتمند می‌کند.
 
 ## Program types
 
-eBPF programs are categorized by where they attach in the kernel. These are the most common:
+برنامه‌های eBPF بر اساس محل اتصال در کرنل دسته‌بندی می‌شوند. رایج‌ترین‌ها:
 
 ### Tracepoints
 
-Tracepoints are hook points defined throughout the kernel code. They expose almost all kernel events, such as process scheduling, file operations, network operations and system calls.
+Tracepointها نقاط hook تعریف‌شده در سراسر کد کرنل هستند. تقریباً تمام رویدادهای کرنل را در دسترس قرار می‌دهند، مانند زمان‌بندی پردازه، عملیات فایل، عملیات شبکه و system callها.
 
 ### Kprobes
 
-Kprobes attach to any kernel function by name. Unlike tracepoints, they're not part of the kernel's stable API - function names and signatures can change between versions.
+Kprobeها به هر تابع کرنل بر اساس نام متصل می‌شوند. برخلاف tracepointها، بخشی از API پایدار کرنل نیستند — نام توابع و امضاها می‌توانند بین نسخه‌ها تغییر کنند.
 
-Kprobes provide access to kernel internals that aren't exposed through tracepoints, allowing deeper inspection of kernel behavior.
+Kprobeها به بخش‌های درونی کرنل که از طریق tracepointها در دسترس نیستند دسترسی می‌دهند و امکان بررسی عمیق‌تر رفتار کرنل را فراهم می‌کنند.
 
 ### XDP
 
-XDP programs attach at the network driver level, processing packets before they reach the kernel's network stack.
+برنامه‌های XDP در سطح درایور شبکه متصل می‌شوند و بسته‌ها را قبل از رسیدن به stack شبکه کرنل پردازش می‌کنند.
 
-XDP programs run so early that they can drop or redirect packets with minimal overhead.
+برنامه‌های XDP آنقدر زود اجرا می‌شوند که می‌توانید بسته‌ها را با سربار کم drop یا redirect کنید.
 
 ## The verifier
 
-If you could run arbitrary code in the kernel, you could crash the system, leak sensitive data, or create infinite loops that hang the machine.
+اگر بتوانید کد دلخواه در کرنل اجرا کنید، می‌توانید سیستم را crash دهید، داده‌های حساس را leak کنید یا حلقه‌های بی‌نهایت ایجاد کنید که ماشین را hang کند.
 
-The eBPF verifier prevents this by analyzing your program before it runs and enforcing strict safety rules.
+verifier eBPF با تحلیل برنامه قبل از اجرا و اعمال قوانین سخت ایمنی از این جلوگیری می‌کند.
 
-As you work through the exercises, you'll encounter verifier errors. While these errors can be cryptic, they always point to something the verifier couldn't prove was safe. Learning to read these errors is part of learning eBPF.
+در حین انجام تمرین‌ها با خطاهای verifier مواجه خواهید شد. اگرچه این خطاها می‌توانند مبهم باشند، همیشه به چیزی اشاره می‌کنند که verifier نتوانسته امنیت آن را اثبات کند. یادگیری خواندن این خطاها بخشی از یادگیری eBPF است.
 
 
 ### Guarantee of termination
 
-Programs must be guaranteed to terminate. To enforce this, the verifier imposes limits:
+برنامه‌ها باید تضمین شود که خاتمه می‌یابند. برای اعمال این کار، verifier محدودیت‌هایی وضع می‌کند:
 
-- Programs have a maximum complexity (counted as "instructions processed" by the verifier)
-- Loops must have a fixed upper bound that the verifier can verify at load time
-- To prevent infinite recursion, helper functions can't call back into your program
+- برنامه‌ها حداکثر پیچیدگی دارند (به‌صورت «دستورالعمل‌های پردازش‌شده» توسط verifier شمارش می‌شود)
+- حلقه‌ها باید حد بالای ثابتی داشته باشند که verifier در زمان load بتواند آن را تأیید کند
+- برای جلوگیری از بازگشت بی‌نهایت، توابع helper نمی‌توانند دوباره به برنامه شما فراخوانی کنند
 
 
 ### Memory safety
 
-All memory access must be safe:
-- You can't do pointer arithmetic or dereference arbitrary addresses
-- Reading kernel or user memory requires special helpers (`bpf_probe_read_kernel`, `bpf_probe_read_user`)
-- Array access must be bounds-checked before use
-- Pointers from map lookups must be checked for NULL
+تمام دسترسی به حافظه باید ایمن باشد:
+- نمی‌توانید pointer arithmetic انجام دهید یا آدرس‌های دلخواه را dereference کنید
+- خواندن حافظه کرنل یا کاربر به helperهای ویژه نیاز دارد (`bpf_probe_read_kernel`, `bpf_probe_read_user`)
+- دسترسی به آرایه باید قبل از استفاده bounds-checked باشد
+- pointerهای حاصل از map lookup باید برای NULL بررسی شوند
 
-The verifier analyzes all branches in your code and will reject programs where _any_ branch path can't be proven safe.
+verifier تمام branchهای کد را تحلیل می‌کند و برنامه‌هایی را رد می‌کند که در _هر_ مسیر branch نتواند ایمنی اثبات شود.

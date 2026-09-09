@@ -1,66 +1,63 @@
-When an eBPF program runs, it's executed in **kernel space**, but with access to information about the
-process that triggered the event.
+وقتی یک برنامه eBPF اجرا می‌شود، در **فضای کرنل** اجرا می‌شود، اما به اطلاعاتی درباره پردازه‌ای که رویداد را فعال کرده دسترسی دارد.
 
-For example, if `bash` triggers an event, your eBPF program can query details about that `bash` 
-process context: its name, process ID, and more.
+مثلاً اگر `bash` یک رویداد را فعال کند، برنامه eBPF شما می‌تواند جزئیات context پردازه `bash` را بپرسد: نام، شناسه پردازه (PID) و موارد دیگر.
 
-The kernel defines a [large set of helper functions](https://docs.ebpf.io/linux/helper-function/)
-to retrieve this information about the triggering process.
+کرنل یک [مجموعه بزرگ از توابع helper](https://docs.ebpf.io/linux/helper-function/) برای دریافت این اطلاعات درباره پردازه فعال‌کننده تعریف کرده است.
 
 ## The challenge
 
-We want to extract the name of every program that executes in the system.
+می‌خواهیم نام هر برنامه‌ای که در سیستم اجرا می‌شود را استخراج کنیم.
 
-To do this, we need to attach our code to an event that fires whenever a program executes.
-This event is called `sched_process_exec`.
+برای این کار باید کدمان را به رویدادی متصل کنیم که هر بار یک برنامه اجرا می‌شود فعال شود.
+این رویداد `sched_process_exec` نام دارد.
 
-In the preloaded snippet, you will see a specific "section" definition just above our function:
+در snippet از پیش بارگذاری‌شده، تعریف «section» خاصی را درست بالای تابع می‌بینید:
 
 ```c
 SEC("tp/sched/sched_process_exec")
 ```
-This macro tells the eBPF loader to attach the function to that specific tracepoint.
-Now, whenever the scheduler runs a new process, our code runs too!
+این ماکرو به loader eBPF می‌گوید تابع را به آن tracepoint مشخص متصل کند.
+اکنون هر بار scheduler یک پردازه جدید اجرا کند، کد ما هم اجرا می‌شود!
 
 
-**Try running the preloaded snippet now.** It should log an entry per event.
+**snippet از پیش بارگذاری‌شده را الان اجرا کنید.** باید برای هر رویداد یک ورودی log کند.
 
 ### Getting the program name
 
-The example code works, but it prints a static string. We want the actual program name for every execution.
+کد نمونه کار می‌کند، اما یک رشته ثابت چاپ می‌کند. ما نام واقعی برنامه را برای هر اجرا می‌خواهیم.
 
-Since our code has access to information about the new process, we can ask the kernel for the triggering process' name.
+چون کد ما به اطلاعات پردازه جدید دسترسی دارد، می‌توانیم از کرنل نام پردازه فعال‌کننده را بپرسیم.
 
-We will use [bpf_get_current_comm(&buf, size)](https://docs.ebpf.io/linux/helper-function/bpf_get_current_comm/)
-which writes the current process name into a buffer you provide.
+از [bpf_get_current_comm(&buf, size)](https://docs.ebpf.io/linux/helper-function/bpf_get_current_comm/) استفاده می‌کنیم
+که نام پردازه فعلی را در بافری که شما فراهم می‌کنید می‌نویسد.
 
-In C, we can declare a character buffer with:
+در C می‌توانیم یک بافر کاراکتر تعریف کنیم:
 ```c
 char buffer[16];
 ```
 
-To populate the buffer with the current process name, call the helper function:
+برای پر کردن بافر با نام پردازه فعلی، تابع helper را فراخوانی کنید:
 
 ```c
 bpf_get_current_comm(&buffer, sizeof(buffer));
 ```
 
-Then call `DEBUG_STR` to see the results:
+سپس `DEBUG_STR` را برای دیدن نتیجه فراخوانی کنید:
 
 ```c
 DEBUG_STR("Command", buffer);
 ```
 
-**Try this now**. You'll see some normal programs like `ls`, and one that stands out.
+**الان این را امتحان کنید**. برنامه‌های عادی مثل `ls` را می‌بینید و یکی که متمایز است.
 
 ### Comparing strings
 
-To filter out the unwanted entries, you'll need to compare strings.
+برای فیلتر کردن ورودی‌های ناخواسته باید رشته‌ها را مقایسه کنید.
 
-We'll use [bpf_strncmp(s1, s1_sz, s2)](https://docs.ebpf.io/linux/helper-function/bpf_strncmp/)
-which compares a variable string to a constant string.
+از [bpf_strncmp(s1, s1_sz, s2)](https://docs.ebpf.io/linux/helper-function/bpf_strncmp/) استفاده می‌کنیم
+که یک رشته متغیر را با یک رشته ثابت مقایسه می‌کند.
 
-For example, to check if the buffer contains `"ls"`:
+مثلاً برای بررسی اینکه بافر شامل `"ls"` است:
 
 ```c
 if (bpf_strncmp(buffer, sizeof(buffer), "ls") == 0) {
@@ -68,8 +65,8 @@ if (bpf_strncmp(buffer, sizeof(buffer), "ls") == 0) {
 }
 ```
 
-It returns **0** when the strings **match**.
+وقتی رشته‌ها **match** باشند **0** برمی‌گرداند.
 
 ### Your task
 
-Submit the name of the program that stands out, using `SUBMIT_STR(buffer)`.
+نام برنامه‌ای که متمایز است را با `SUBMIT_STR(buffer)` ارسال کنید.

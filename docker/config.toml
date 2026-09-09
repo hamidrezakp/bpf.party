@@ -1,0 +1,6 @@
+listen_address = "0.0.0.0:8081"
+max_concurrent_vms = 4
+clang_path = "/usr/bin/clang"
+includes_path = "/app/includes/"
+rootfs_path = "/app/rootfs.ext4"
+vmlinux_path = "/app/vmlinux"

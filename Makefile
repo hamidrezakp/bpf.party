@@ -1,6 +1,7 @@
 .PHONY: all website_bindings website
 
-CFLAGS = -static -fno-ident -fno-asynchronous-unwind-tables -fno-unwind-tables -s -Os -nostdlib -I/home/david/git/linux-6.18.2/tools/include/nolibc -include nolibc.h
+NOLIBC_INCLUDE ?= /usr/src/linux/tools/include/nolibc
+CFLAGS = -static -fno-ident -fno-asynchronous-unwind-tables -fno-unwind-tables -s -Os -nostdlib -I$(NOLIBC_INCLUDE) -include nolibc.h
 
 all: website_bindings backend/includes/task.h.pch rootfs.ext4 backend/includes/kfuncs.h
 	:

@@ -10,7 +10,7 @@
   background: var(--color-code-bg);
   border-radius: 4px;
   border: 1px solid #3a3a3a;
-  border-right: 3px solid #0a0a0a;
+  border-inline-end: 3px solid #0a0a0a;
   border-bottom: 3px solid #0a0a0a;
   color: var(--color-code-fg);
   display: inline-block;
@@ -69,4 +69,18 @@
 
 .prose svg {
   font-family: sans-serif;
+}
+
+.content-scroll[dir="rtl"] {
+  font-family: "Vazirmatn", sans-serif;
+}
+
+.content-scroll[dir="rtl"] pre,
+.content-scroll[dir="rtl"] pre code {
+  direction: ltr;
+  text-align: left;
+}
+
+.content-scroll[dir="rtl"] :global(.navArrow) svg {
+  transform: scaleX(-1);
 }
