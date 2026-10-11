@@ -16,7 +16,7 @@ Open http://localhost:8080. This mode serves the website without starting the ba
 
 ### Full stack (code execution)
 
-Builds the patched `vmlinux`, backend, rootfs, and installs Firecracker from upstream GitHub releases inside the image. Requires Linux with KVM.
+Builds the patched `vmlinux`, backend, rootfs, and installs Firecracker from upstream releases inside the image. Requires Linux with KVM.
 
 ```bash
 docker compose --profile full up --build

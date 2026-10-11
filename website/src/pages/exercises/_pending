@@ -35,7 +35,7 @@ The tracepoint is invoked _before the start_ of the kernel function.
 
 <details>
 <summary>Excessive details on `__data_loc` definition</summary>
-You can find that the `__data_loc` prefix is prepended in the [__dynamic_array macro](https://github.com/torvalds/linux/blob/v6.18/include/trace/stages/stage4_event_fields.h#L33-L36).
+You can find that the `__data_loc` prefix is prepended in the `__dynamic_array` macro.
 ```c
 #define __dynamic_array(_type, _item, _len) {				\
 	.type = "__data_loc " #_type "[]", .name = #_item,		\
@@ -44,7 +44,7 @@ You can find that the `__data_loc` prefix is prepended in the [__dynamic_array m
 ```
 which is part of the machinery that generates the tracing format we saw before.
 
-For the actual runtime behavior, see the [sched_process_exec tracepoint definition](https://github.com/torvalds/linux/blob/v6.18/include/trace/events/sched.h#L438)
+For the actual runtime behavior, see the `sched_process_exec` tracepoint definition
 which uses `__string()` to declare the field and `__assign_str()` to populate it.
 
 The `__assign_str` macro copies the string to a buffer and encodes the offset + length into that 4-byte `filename` field.

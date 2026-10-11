@@ -24,21 +24,6 @@ import ExerciseList from "../../components/ExerciseList";
 
       <ExerciseList client:idle metadata={CONTENT_METADATA} />
     </div>
-    <footer class="footer">
-      <p>
-        مشکلی پیدا کردید یا ایده‌ای برای تمرین جدید دارید؟ آن را در{" "}
-        <a href="https://github.com/DavidVentura/ebpf.party/issues">
-          مخزن پروژه
-        </a>{" "}
-        مطرح کنید.
-      </p>
-      <p>
-        این پروژه متن‌باز است.{" "}
-        <a href="https://github.com/DavidVentura/ebpf.party">
-          کد و معماری پروژه را ببینید.
-        </a>
-      </p>
-    </footer>
   </div>
 </Layout>
 
@@ -145,23 +130,5 @@ import ExerciseList from "../../components/ExerciseList";
     transform: translateY(-2px);
     box-shadow: 0 10px 36px
       color-mix(in srgb, var(--color-accent) 50%, transparent);
-  }
-  .footer {
-    margin-top: 2.5rem;
-    padding: 1.5rem 1.75rem;
-    border: 1px solid var(--glass-border);
-    background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(2, 6, 16, 0.35);
-    font-size: 0.875rem;
-    color: var(--color-text-secondary);
-  }
-  .footer p {
-    margin: 0 0 0.75rem;
-  }
-  .footer p:last-child {
-    margin-bottom: 0;
   }
 </style>

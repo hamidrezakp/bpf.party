@@ -1,20 +1,16 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { CONTENT_METADATA } from "../lib/exercises-metadata";
-import GithubMark from "../components/GithubMark.astro";
 import BookOpen from "@lucide/astro/icons/book-open";
 import Cpu from "@lucide/astro/icons/cpu";
 import Zap from "@lucide/astro/icons/zap";
 import CodeXml from "@lucide/astro/icons/code-xml";
 import ShieldCheck from "@lucide/astro/icons/shield-check";
 import CircleCheckBig from "@lucide/astro/icons/circle-check-big";
-import GitBranch from "@lucide/astro/icons/git-branch";
 import GraduationCap from "@lucide/astro/icons/graduation-cap";
 import Mail from "@lucide/astro/icons/mail";
 import ArrowLeft from "@lucide/astro/icons/arrow-left";
 
-const GITHUB_URL = "https://github.com/DavidVentura/ebpf.party";
-const ISSUES_URL = `${GITHUB_URL}/issues`;
 const CONTACT_EMAIL = "help@bpflab.ir";
 
 const chapters = CONTENT_METADATA.chapters
@@ -57,11 +53,6 @@ const features = [
     icon: CircleCheckBig,
     title: "پیشرفتِ نزد شما",
     desc: "وضعیت تمرین‌ها در مرورگر خودتان ذخیره می‌شود؛ بدون حساب کاربری و بدون ردیابی.",
-  },
-  {
-    icon: GitBranch,
-    title: "متن‌باز",
-    desc: "کل پلتفرم — از کامپایلر تا محتوا — آزاد است و روی GitHub در دسترس شماست.",
   },
 ];
 
@@ -145,15 +136,6 @@ const chips: Array<[string, number, number]> = [
         <div class="cta-row">
           <a class="btn-primary" href="/exercises/">
             شروع یادگیری <ArrowLeft size={18} aria-hidden="true" />
-          </a>
-          <a
-            class="btn-ghost"
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <GithubMark size={17} />
-            کد در GitHub
           </a>
         </div>
         <p class="audience">
@@ -450,15 +432,6 @@ const chips: Array<[string, number, number]> = [
             <span class="stat-label">داخل microVM ایزوله</span>
           </div>
         </li>
-        <li>
-          <span class="stat-icon">
-            <GitBranch size={19} aria-hidden="true" />
-          </span>
-          <div>
-            <strong>متن‌باز</strong>
-            <span class="stat-label">کد و محتوا روی GitHub</span>
-          </div>
-        </li>
       </ul>
     </section>
 
@@ -687,15 +660,6 @@ const chips: Array<[string, number, number]> = [
             <Mail size={17} aria-hidden="true" />
             <span dir="ltr">{CONTACT_EMAIL}</span>
           </a>
-          <a
-            class="btn-ghost"
-            href={ISSUES_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <GithubMark size={16} />
-            گزارش مشکل در GitHub
-          </a>
         </div>
       </div>
     </section>
@@ -706,17 +670,11 @@ const chips: Array<[string, number, number]> = [
           BPFLab
         </span>
         <span class="footer-tagline">
-          آزمایشگاه متن‌باز برای یادگیری عملی eBPF
+          آزمایشگاه آنلاین برای یادگیری عملی eBPF
         </span>
       </div>
       <nav class="footer-links" aria-label="پیوندهای پاورقی">
         <a href="/exercises/">تمرین‌ها</a>
-        <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
-          GitHub
-        </a>
-        <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer">
-          گزارش مشکل
-        </a>
         <a href={`mailto:${CONTACT_EMAIL}`}>
           <span dir="ltr">{CONTACT_EMAIL}</span>
         </a>
@@ -859,32 +817,6 @@ const chips: Array<[string, number, number]> = [
     transform: translateY(-2px);
     box-shadow: 0 10px 36px
       color-mix(in srgb, var(--color-accent) 50%, transparent);
-  }
-
-  .btn-ghost {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.7rem 1.4rem;
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    color: var(--color-text-primary);
-    text-decoration: none;
-    border-radius: 999px;
-    font-weight: 600;
-    transition:
-      transform 0.2s,
-      border-color 0.2s,
-      background 0.2s;
-  }
-
-  .btn-ghost:hover {
-    color: var(--color-text-primary);
-    transform: translateY(-2px);
-    background: var(--glass-bg-strong);
-    border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
   }
 
   .audience {

@@ -4,7 +4,6 @@ import "../styles/global.css";
 import BookOpen from "@lucide/astro/icons/book-open";
 import Terminal from "@lucide/astro/icons/terminal";
 import Logo from "../../public/logo.svg";
-import GithubMark from "../components/GithubMark.astro";
 interface Props {
   hasCodeTabs?: boolean;
   title?: string;
@@ -85,15 +84,6 @@ const {
           <div class="navbar-links">
             <a href="/exercises/" class="nav-link">
               تمرین‌ها
-            </a>
-            <a
-              href="https://github.com/DavidVentura/ebpf.party"
-              class="nav-link nav-link-icon"
-              aria-label="مخزن GitHub پروژه"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <GithubMark size={17} />
             </a>
           </div>
         </div>
@@ -326,10 +316,6 @@ const {
   @media (max-width: 600px) {
     .navbar-left {
       gap: 0.6rem;
-    }
-
-    .nav-link-icon {
-      display: none;
     }
 
     .nav-link {

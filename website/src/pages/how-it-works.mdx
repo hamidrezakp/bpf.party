@@ -18,13 +18,13 @@ title: این پلتفرم چگونه کار می‌کند
 - بدون دسترسی به شبکهٔ خارجی
 - توقف خودکار پس از ۵۰۰ میلی‌ثانیه
 
-زمان بوت ۴۰~۵۰ms است به لطف [Firecracker](https://github.com/firecracker-microvm/firecracker) (با چند patch عجیب!) و یک کرنل بسیار minimal.
+زمان بوت ۴۰~۵۰ms است به لطف Firecracker (با چند patch عجیب!) و یک کرنل بسیار minimal.
 
-VM با یک [process سفارشی `/init`](https://github.com/DavidVentura/ebpf.party/blob/master/userspace/src/main.rs) بوت می‌شود که حداقل راه‌اندازی را انجام می‌دهد (mount کردن `/sys`، راه‌اندازی loopback و ...)، شیء BPF شما را load می‌کند و eventها را stream می‌کند.
+VM با یک process سفارشی `/init` بوت می‌شود که حداقل راه‌اندازی را انجام می‌دهد (mount کردن `/sys`، راه‌اندازی loopback و ...)، شیء BPF شما را load می‌کند و eventها را stream می‌کند.
 
 ## دریافت رویدادها از ماشین مجازی
 
-کد شما باید [`ep_platform.h`](https://github.com/DavidVentura/ebpf.party/blob/master/backend/includes/ep_platform.h) را `#include` کند که یک map از نوع BPF ringbuf برای همه خروجی‌ها ایجاد می‌کند.
+کد شما باید `ep_platform.h` را `#include` کند که یک map از نوع BPF ringbuf برای همه خروجی‌ها ایجاد می‌کند.
 
 ماکروهای `DEBUG_` و `SUBMIT_` eventها را در این map می‌نویسند.
 
