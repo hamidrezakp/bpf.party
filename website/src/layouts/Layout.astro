@@ -4,6 +4,7 @@ import "../styles/global.css";
 import BookOpen from "@lucide/astro/icons/book-open";
 import Terminal from "@lucide/astro/icons/terminal";
 import Logo from "../../public/logo.svg";
+import GithubMark from "../components/GithubMark.astro";
 interface Props {
   hasCodeTabs?: boolean;
   title?: string;
@@ -81,6 +82,20 @@ const {
               BPFLab
             </span>
           </a>
+          <div class="navbar-links">
+            <a href="/exercises/" class="nav-link">
+              تمرین‌ها
+            </a>
+            <a
+              href="https://github.com/DavidVentura/ebpf.party"
+              class="nav-link nav-link-icon"
+              aria-label="مخزن GitHub پروژه"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <GithubMark size={17} />
+            </a>
+          </div>
         </div>
         {hasCodeTabs && (
           <div class="navbar-tabs" aria-label="نمای تمرین">
@@ -187,6 +202,35 @@ const {
     color: transparent;
   }
 
+  .navbar-links {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-inline-start: 1.25rem;
+  }
+
+  .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 999px;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    border: 1px solid transparent;
+    transition:
+      color 0.2s ease,
+      background-color 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .nav-link:hover {
+    color: var(--color-text-primary);
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+  }
+
   .navbar-tabs {
     display: none;
   }
@@ -270,6 +314,20 @@ const {
       gap: 0.35rem;
       font-size: 0.875rem;
       min-height: 40px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .navbar-links {
+      margin-inline-start: 0.5rem;
+    }
+
+    .nav-link-icon {
+      display: none;
+    }
+
+    .nav-link {
+      padding: 0.4rem 0.55rem;
     }
   }
 </style>

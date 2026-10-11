@@ -1,61 +1,782 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { CONTENT_METADATA } from "../lib/exercises-metadata";
-import ExerciseList from "../components/ExerciseList";
+import GithubMark from "../components/GithubMark.astro";
+import BookOpen from "@lucide/astro/icons/book-open";
+import Cpu from "@lucide/astro/icons/cpu";
+import Zap from "@lucide/astro/icons/zap";
+import CodeXml from "@lucide/astro/icons/code-xml";
+import ShieldCheck from "@lucide/astro/icons/shield-check";
+import CircleCheckBig from "@lucide/astro/icons/circle-check-big";
+import GitBranch from "@lucide/astro/icons/git-branch";
+import GraduationCap from "@lucide/astro/icons/graduation-cap";
+import Mail from "@lucide/astro/icons/mail";
+import ArrowLeft from "@lucide/astro/icons/arrow-left";
+
+const GITHUB_URL = "https://github.com/DavidVentura/ebpf.party";
+const ISSUES_URL = `${GITHUB_URL}/issues`;
+const CONTACT_EMAIL = "help@bpflab.ir";
+
+const chapters = CONTENT_METADATA.chapters
+  .map((chapter) => ({
+    ...chapter,
+    exercises: chapter.exercises.filter((exercise) => !exercise.incomplete),
+  }))
+  .filter((chapter) => chapter.exercises.length > 0);
+
+const totalExercises = chapters.reduce(
+  (sum, chapter) => sum + chapter.exercises.length,
+  0,
+);
+
+const faNum = (n: number) => n.toLocaleString("fa-IR");
+const hexNum = (n: number) => `0x${n.toString(16).padStart(2, "0")}`;
+
+const features = [
+  {
+    icon: Cpu,
+    title: "هستهٔ واقعی لینوکس",
+    desc: "برنامه‌های شما شبیه‌سازی نمی‌شوند؛ روی هستهٔ واقعی لینوکس، داخل یک microVM ایزوله، اجرا می‌شوند.",
+  },
+  {
+    icon: Zap,
+    title: "بدون هیچ نصبی",
+    desc: "نه ماشین مجازی، نه Docker، نه پیکربندی. فقط یک مرورگر مدرن کافی است.",
+  },
+  {
+    icon: CodeXml,
+    title: "ابزارهای واقعی",
+    desc: "کامپایل با clang و بارگذاری با libbpf — همان ابزارهایی که در محیط عملیاتی استفاده می‌کنید.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "وریفایرِ قابل‌فهم",
+    desc: "خروجی طولانی و رمزآلود verifier هسته به تشخیص‌های خوانا و دقیق تبدیل می‌شود تا سریع‌تر رفع اشکال کنید.",
+  },
+  {
+    icon: CircleCheckBig,
+    title: "پیشرفتِ نزد شما",
+    desc: "وضعیت تمرین‌ها در مرورگر خودتان ذخیره می‌شود؛ بدون حساب کاربری و بدون ردیابی.",
+  },
+  {
+    icon: GitBranch,
+    title: "متن‌باز",
+    desc: "کل پلتفرم — از کامپایلر تا محتوا — آزاد است و روی GitHub در دسترس شماست.",
+  },
+];
+
+const steps = [
+  {
+    title: "نوشتن کد",
+    desc: "کد C را در ویرایشگر مرورگر می‌نویسید و بررسی فوری نحو، ایرادها را همان‌جا نشان می‌دهد.",
+  },
+  {
+    title: "کامپایل",
+    desc: "بک‌اند کد شما را با clang برای هدف BPF کامپایل می‌کند.",
+  },
+  {
+    title: "اجرا",
+    desc: "برنامهٔ BPF در یک microVM فایرکراکر — ایزوله و امن — روی هستهٔ واقعی لینوکس بارگذاری می‌شود.",
+  },
+  {
+    title: "مشاهدهٔ نتیجه",
+    desc: "رویدادها، خروجی وریفایر و پاسخ تمرین به‌صورت زنده و از طریق SSE به مرورگر برمی‌گردند.",
+  },
+];
+
+const hexPoints = (cx: number, cy: number, r: number) => {
+  const w = (Math.sqrt(3) * r) / 2;
+  return [
+    `${cx},${cy - r}`,
+    `${cx + w},${cy - r / 2}`,
+    `${cx + w},${cy + r / 2}`,
+    `${cx},${cy + r}`,
+    `${cx - w},${cy + r / 2}`,
+    `${cx - w},${cy - r / 2}`,
+  ].join(" ");
+};
+
+// honeycomb flower for the hero kernel box (pointy-top hexes, r = 22)
+const HEX_R = 22;
+const HEX_W = Math.sqrt(3) * HEX_R;
+const flower = [
+  [130, 174],
+  [130 + HEX_W, 174],
+  [130 - HEX_W, 174],
+  [130 + HEX_W / 2, 174 - 1.5 * HEX_R],
+  [130 + HEX_W / 2, 174 + 1.5 * HEX_R],
+  [130 - HEX_W / 2, 174 - 1.5 * HEX_R],
+  [130 - HEX_W / 2, 174 + 1.5 * HEX_R],
+];
+
+const bgHexes: Array<[number, number, number]> = [
+  [600, 344, 24],
+  [316, 356, 14],
+  [52, 22, 18],
+  [618, 118, 12],
+  [246, 30, 10],
+];
+
+const chips: Array<[string, number, number]> = [
+  ["kprobes", 42, 56],
+  ["maps", 104, 42],
+  ["syscalls", 152, 66],
+];
 ---
 
-<Layout title="آموزش عملی eBPF">
-  <div class="home">
-    <div class="content">
-      <header class="hero">
+<Layout
+  title="آموزش عملی eBPF در مرورگر"
+  description="با BPFLab برنامه‌های eBPF را در مرورگر بنویسید، با clang کامپایل کنید و روی هستهٔ واقعی لینوکس اجرا کنید — بدون نصب هیچ‌چیز."
+>
+  <div class="landing">
+    <header class="hero">
+      <div class="hero-text">
         <p class="eyebrow">
           <span class="pulse" aria-hidden="true"></span>
-          از مفاهیم تا کد واقعی
+          آزمایشگاه آنلاین eBPF — بدون نصب هیچ‌چیز
         </p>
-        <h1>eBPF را با تمرین یاد بگیرید</h1>
+        <h1>eBPF را در مرورگر بنویسید و روی هستهٔ واقعی اجرا کنید</h1>
         <p class="intro">
-          کد بنویسید، کامپایل کنید و برنامه‌های eBPF را مستقیماً در مرورگر اجرا
-          کنید؛ قدم‌به‌قدم با رفتار هستهٔ لینوکس آشنا شوید.
+          کد C می‌نویسید، با clang کامپایل می‌شود و روی هستهٔ واقعی لینوکس —
+          داخل یک microVM ایزوله — اجرا می‌شود؛ رویدادها و خروجی وریفایر به‌صورت
+          زنده به مرورگر برمی‌گردند. نه نصب ماشین مجازی، نه Docker؛ فقط یک
+          مرورگر.
         </p>
-        <a class="start-link" href="/exercises/chapter-0/1_theory/">
-          شروع یادگیری <span aria-hidden="true">←</span>
-        </a>
-      </header>
+        <div class="cta-row">
+          <a class="btn-primary" href="/exercises/">
+            شروع یادگیری <ArrowLeft size={18} aria-hidden="true" />
+          </a>
+          <a
+            class="btn-ghost"
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <GithubMark size={17} />
+            کد در GitHub
+          </a>
+        </div>
+        <p class="audience">
+          مناسب برای: SRE و زیرساخت · امنیت · شبکه · هرکسی که کنجکاوِ هستهٔ
+          لینوکس است
+        </p>
+      </div>
 
-      <ExerciseList client:idle metadata={CONTENT_METADATA} />
-    </div>
-    <footer class="footer">
-      <p>
-        مشکلی پیدا کردید یا ایده‌ای برای تمرین جدید دارید؟ آن را در{" "}
-        <a href="https://github.com/DavidVentura/ebpf.party/issues">
-          مخزن پروژه
-        </a>{" "}
-        مطرح کنید.
-      </p>
-      <p>
-        این پروژه متن‌باز است.{" "}
-        <a href="https://github.com/DavidVentura/ebpf.party">
-          کد و معماری پروژه را ببینید.
+      <figure class="hero-figure">
+        <svg
+          viewBox="0 0 640 400"
+          role="img"
+          aria-label="کد در مرورگر نوشته می‌شود، با clang کامپایل و روی هستهٔ لینوکس اجرا می‌شود و رویدادها از طریق SSE برمی‌گردند"
+        >
+          <defs>
+            <linearGradient id="heroGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="var(--color-accent)"></stop>
+              <stop offset="1" stop-color="var(--color-accent-2)"></stop>
+            </linearGradient>
+            <marker
+              id="heroArrowMuted"
+              viewBox="0 0 10 10"
+              refX="8"
+              refY="5"
+              markerWidth="6.5"
+              markerHeight="6.5"
+              orient="auto-start-reverse"
+            >
+              <path
+                d="M0 0 L10 5 L0 10 Z"
+                fill="var(--color-text-secondary)"
+              ></path>
+            </marker>
+            <marker
+              id="heroArrowAccent"
+              viewBox="0 0 10 10"
+              refX="8"
+              refY="5"
+              markerWidth="6.5"
+              markerHeight="6.5"
+              orient="auto-start-reverse"
+            >
+              <path d="M0 0 L10 5 L0 10 Z" fill="var(--color-accent)"></path>
+            </marker>
+          </defs>
+
+          <!-- floating background hexes -->
+          <g fill="var(--color-accent)" opacity="0.07">
+            {bgHexes.map(([cx, cy, r]) => (
+              <polygon points={hexPoints(cx, cy, r)}></polygon>
+            ))}
+          </g>
+
+          <!-- compile wire: browser -> kernel -->
+          <path
+            class="wire"
+            d="M392 174 H240"
+            stroke="rgba(255,255,255,0.28)"
+            stroke-width="1.5"
+            marker-end="url(#heroArrowMuted)"
+          ></path>
+
+          <!-- events wire: kernel -> browser (SSE) -->
+          <path
+            class="wire flow"
+            d="M130 62 C130 12 502 12 502 62"
+            stroke="var(--color-accent)"
+            stroke-width="1.5"
+            stroke-dasharray="4 7"
+            marker-end="url(#heroArrowAccent)"
+          ></path>
+          <text x="316" y="24" class="svg-label svg-label-accent">
+            SSE · رویدادهای زنده
+          </text>
+
+          <!-- kernel box -->
+          <g>
+            <rect
+              x="28"
+              y="64"
+              width="204"
+              height="252"
+              rx="14"
+              fill="var(--glass-bg)"
+              stroke="var(--glass-border)"
+            ></rect>
+            <text x="130" y="299" class="svg-label">
+              Linux Kernel
+            </text>
+            <g>
+              {flower.map(([cx, cy], i) =>
+                i === 0 ? (
+                  <polygon
+                    class="hex-core"
+                    points={hexPoints(cx, cy, HEX_R)}
+                    fill="url(#heroGrad)"
+                  ></polygon>
+                ) : (
+                  <polygon
+                    points={hexPoints(cx, cy, HEX_R)}
+                    fill="rgba(255,255,255,0.05)"
+                    stroke="var(--color-accent)"
+                    stroke-opacity="0.45"
+                    stroke-width="1"
+                  ></polygon>
+                ),
+              )}
+            </g>
+            {chips.map(([label, x, w]) => (
+              <g>
+                <rect
+                  x={x}
+                  y="246"
+                  width={w}
+                  height="18"
+                  rx="9"
+                  fill="rgba(255,255,255,0.05)"
+                  stroke="var(--glass-border)"
+                ></rect>
+                <text
+                  x={x + w / 2}
+                  y="258"
+                  class="svg-chip"
+                  text-anchor="middle"
+                >
+                  {label}
+                </text>
+              </g>
+            ))}
+          </g>
+
+          <!-- backend node -->
+          <g>
+            <rect
+              x="284"
+              y="148"
+              width="84"
+              height="52"
+              rx="10"
+              fill="var(--glass-bg-strong)"
+              stroke="var(--glass-border)"
+            ></rect>
+            <text x="326" y="172" class="svg-label" text-anchor="middle">
+              clang
+            </text>
+            <text x="326" y="188" class="svg-chip" text-anchor="middle">
+              libbpf
+            </text>
+          </g>
+
+          <!-- browser window -->
+          <g>
+            <rect
+              x="392"
+              y="64"
+              width="220"
+              height="190"
+              rx="12"
+              fill="var(--glass-bg)"
+              stroke="var(--glass-border)"
+            ></rect>
+            <circle
+              cx="408"
+              cy="82"
+              r="4"
+              fill="rgba(255,255,255,0.18)"
+            ></circle>
+            <circle
+              cx="422"
+              cy="82"
+              r="4"
+              fill="rgba(255,255,255,0.18)"
+            ></circle>
+            <circle
+              cx="436"
+              cy="82"
+              r="4"
+              fill="color-mix(in srgb, var(--color-accent) 60%, transparent)"
+            ></circle>
+            <rect
+              x="408"
+              y="106"
+              width="150"
+              height="8"
+              rx="4"
+              fill="rgba(255,255,255,0.14)"
+            ></rect>
+            <rect
+              x="408"
+              y="124"
+              width="110"
+              height="8"
+              rx="4"
+              fill="rgba(255,255,255,0.14)"
+            ></rect>
+            <rect
+              x="408"
+              y="142"
+              width="168"
+              height="8"
+              rx="4"
+              fill="url(#heroGrad)"
+              opacity="0.9"
+            ></rect>
+            <rect
+              x="408"
+              y="160"
+              width="90"
+              height="8"
+              rx="4"
+              fill="rgba(255,255,255,0.14)"
+            ></rect>
+            <rect
+              x="408"
+              y="178"
+              width="132"
+              height="8"
+              rx="4"
+              fill="rgba(255,255,255,0.14)"
+            ></rect>
+            <rect
+              x="408"
+              y="196"
+              width="60"
+              height="8"
+              rx="4"
+              fill="rgba(255,255,255,0.14)"
+            ></rect>
+            <rect
+              class="blink"
+              x="474"
+              y="196"
+              width="8"
+              height="8"
+              rx="2"
+              fill="var(--color-accent)"
+            ></rect>
+            <rect
+              x="552"
+              y="222"
+              width="48"
+              height="20"
+              rx="10"
+              fill="url(#heroGrad)"
+            ></rect>
+            <polygon points="568,227 568,237 578,232" fill="#fff"></polygon>
+          </g>
+
+          <!-- traveling dots -->
+          <circle r="3.5" fill="var(--color-accent)" opacity="0.9">
+            <animateMotion
+              dur="4.5s"
+              repeatCount="indefinite"
+              path="M392 174 H240"
+            ></animateMotion>
+          </circle>
+          <circle r="3.5" fill="var(--color-accent-2)" opacity="0.9">
+            <animateMotion
+              dur="3.5s"
+              repeatCount="indefinite"
+              path="M130 62 C130 12 502 12 502 62"
+            ></animateMotion>
+          </circle>
+        </svg>
+      </figure>
+    </header>
+
+    <section class="stats-section" aria-label="آمار پروژه">
+      <ul class="stats">
+        <li>
+          <span class="stat-icon">
+            <BookOpen size={19} aria-hidden="true" />
+          </span>
+          <div>
+            <strong>{faNum(chapters.length)} فصل</strong>
+            <span>از مقدمه تا kprobeهای هسته</span>
+          </div>
+        </li>
+        <li>
+          <span class="stat-icon">
+            <GraduationCap size={19} aria-hidden="true" />
+          </span>
+          <div>
+            <strong>{faNum(totalExercises)} تمرین عملی</strong>
+            <span>با اجرای واقعی در مرورگر</span>
+          </div>
+        </li>
+        <li>
+          <span class="stat-icon">
+            <Cpu size={19} aria-hidden="true" />
+          </span>
+          <div>
+            <strong>هستهٔ واقعی لینوکس</strong>
+            <span>داخل microVM ایزوله</span>
+          </div>
+        </li>
+        <li>
+          <span class="stat-icon">
+            <GitBranch size={19} aria-hidden="true" />
+          </span>
+          <div>
+            <strong>متن‌باز</strong>
+            <span>کد و محتوا روی GitHub</span>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <p class="kicker">قابلیت‌ها</p>
+        <h2>چرا BPFLab؟</h2>
+      </div>
+      <ul class="features">
+        {features.map((feature) => (
+          <li class="feature">
+            <span class="feature-icon">
+              <feature.icon size={20} aria-hidden="true" />
+            </span>
+            <h3>{feature.title}</h3>
+            <p>{feature.desc}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <p class="kicker">زیر کاپوت</p>
+        <h2>چطور کار می‌کند؟</h2>
+      </div>
+      <figure class="pipeline-card">
+        <svg
+          viewBox="0 0 680 224"
+          role="img"
+          aria-label="مسیر اجرا: مرورگر، بک‌اند، microVM و هستهٔ لینوکس؛ رویدادها با SSE برمی‌گردند"
+        >
+          <defs>
+            <marker
+              id="pipeArrowMuted"
+              viewBox="0 0 10 10"
+              refX="8"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path
+                d="M0 0 L10 5 L0 10 Z"
+                fill="var(--color-text-secondary)"
+              ></path>
+            </marker>
+            <marker
+              id="pipeArrowAccent"
+              viewBox="0 0 10 10"
+              refX="8"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M0 0 L10 5 L0 10 Z" fill="var(--color-accent)"></path>
+            </marker>
+          </defs>
+
+          <!-- forward wires: browser -> backend -> microvm -> kernel -->
+          <path
+            class="wire"
+            d="M530 80 H508"
+            stroke="rgba(255,255,255,0.3)"
+            stroke-width="1.5"
+            marker-end="url(#pipeArrowMuted)"
+          ></path>
+          <path
+            class="wire"
+            d="M360 80 H338"
+            stroke="rgba(255,255,255,0.3)"
+            stroke-width="1.5"
+            marker-end="url(#pipeArrowMuted)"
+          ></path>
+          <path
+            class="wire"
+            d="M190 80 H168"
+            stroke="rgba(255,255,255,0.3)"
+            stroke-width="1.5"
+            marker-end="url(#pipeArrowMuted)"
+          ></path>
+
+          <!-- return wire: kernel -> browser (SSE) -->
+          <path
+            class="wire flow"
+            d="M90 112 V178 H600 V120"
+            fill="none"
+            stroke="var(--color-accent)"
+            stroke-width="1.5"
+            stroke-dasharray="5 7"
+            marker-end="url(#pipeArrowAccent)"
+          ></path>
+          <text x="345" y="200" class="svg-label svg-label-accent">
+            SSE · رویدادها و خروجی زنده
+          </text>
+
+          <!-- kernel node -->
+          <rect
+            x="20"
+            y="48"
+            width="140"
+            height="64"
+            rx="12"
+            fill="var(--glass-bg-strong)"
+            stroke="color-mix(in srgb, var(--color-accent) 45%, transparent)"
+          ></rect>
+          <text x="90" y="79" class="pipe-title" text-anchor="middle">
+            هستهٔ لینوکس
+          </text>
+          <text x="90" y="96" class="pipe-sub" text-anchor="middle">
+            eBPF
+          </text>
+
+          <!-- microvm node -->
+          <rect
+            x="190"
+            y="48"
+            width="140"
+            height="64"
+            rx="12"
+            fill="var(--glass-bg)"
+            stroke="var(--glass-border)"
+          ></rect>
+          <text x="260" y="79" class="pipe-title" text-anchor="middle">
+            microVM
+          </text>
+          <text x="260" y="96" class="pipe-sub" text-anchor="middle">
+            Firecracker
+          </text>
+
+          <!-- backend node -->
+          <rect
+            x="360"
+            y="48"
+            width="140"
+            height="64"
+            rx="12"
+            fill="var(--glass-bg)"
+            stroke="var(--glass-border)"
+          ></rect>
+          <text x="430" y="79" class="pipe-title" text-anchor="middle">
+            بک‌اند
+          </text>
+          <text x="430" y="96" class="pipe-sub" text-anchor="middle">
+            clang
+          </text>
+
+          <!-- browser node -->
+          <rect
+            x="530"
+            y="48"
+            width="140"
+            height="64"
+            rx="12"
+            fill="var(--glass-bg)"
+            stroke="var(--glass-border)"
+          ></rect>
+          <text x="600" y="79" class="pipe-title" text-anchor="middle">
+            مرورگر
+          </text>
+          <text x="600" y="96" class="pipe-sub" text-anchor="middle">
+            CodeMirror
+          </text>
+        </svg>
+      </figure>
+      <ol class="steps">
+        {steps.map((step, i) => (
+          <li class="step">
+            <span class="step-num" dir="ltr">
+              {hexNum(i + 1)}
+            </span>
+            <h3>{step.title}</h3>
+            <p>{step.desc}</p>
+          </li>
+        ))}
+      </ol>
+      <p class="all-exercises">
+        <a href="/how-it-works/">
+          جزئیات فنی بیشتر <span aria-hidden="true">←</span>
         </a>
+      </p>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <p class="kicker">محتوا</p>
+        <h2>مسیر یادگیری</h2>
+      </div>
+      <div class="chapters">
+        {chapters.map((chapter) => (
+          <a
+            class="chapter-card"
+            href={`/exercises/${chapter.slug}/${chapter.exercises[0].slug}/`}
+          >
+            <span class="chapter-num" dir="ltr">
+              {hexNum(chapter.number)}
+            </span>
+            <h3>{chapter.title}</h3>
+            <p class="chapter-count">{faNum(chapter.exercises.length)} تمرین</p>
+            <span class="chapter-cta">
+              شروع فصل <ArrowLeft size={16} aria-hidden="true" />
+            </span>
+          </a>
+        ))}
+      </div>
+      <p class="all-exercises">
+        <a href="/exercises/">
+          دیدن همهٔ تمرین‌ها <span aria-hidden="true">←</span>
+        </a>
+      </p>
+    </section>
+
+    <section class="section contact-section" id="contact">
+      <div class="contact-card">
+        <span class="contact-icon">
+          <Mail size={24} aria-hidden="true" />
+        </span>
+        <h2>تماس با ما</h2>
+        <p class="contact-text">
+          سؤالی دربارهٔ تمرین‌ها دارید؟ به مشکلی برخوردید؟ ایدهٔ تمرین جدیدی در
+          سر دارید؟ خوشحال می‌شویم بشنویم.
+        </p>
+        <div class="cta-row">
+          <a class="btn-primary" href={`mailto:${CONTACT_EMAIL}`}>
+            <Mail size={17} aria-hidden="true" />
+            <span dir="ltr">{CONTACT_EMAIL}</span>
+          </a>
+          <a
+            class="btn-ghost"
+            href={ISSUES_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <GithubMark size={16} />
+            گزارش مشکل در GitHub
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-brand">
+        <span class="footer-name" dir="ltr">
+          BPFLab
+        </span>
+        <span class="footer-tagline">
+          آزمایشگاه متن‌باز برای یادگیری عملی eBPF
+        </span>
+      </div>
+      <nav class="footer-links" aria-label="پیوندهای پاورقی">
+        <a href="/exercises/">تمرین‌ها</a>
+        <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+          GitHub
+        </a>
+        <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer">
+          گزارش مشکل
+        </a>
+        <a href={`mailto:${CONTACT_EMAIL}`}>
+          <span dir="ltr">{CONTACT_EMAIL}</span>
+        </a>
+      </nav>
+      <p class="footer-note">
+        © 2026 BPFLab — ساخته‌شده با Astro، Rust و Firecracker.
       </p>
     </footer>
   </div>
 </Layout>
 
 <style>
-  .home {
+  /* ---------- layout ---------- */
+  .landing {
+    max-width: 76rem;
+    margin-inline: auto;
     padding: clamp(1rem, 4vw, 3rem);
-    max-width: 90ch;
-    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    min-height: calc(100svh - 64px);
-    justify-content: space-between;
+    gap: clamp(2.5rem, 6vh, 4rem);
   }
 
-  .home h1 {
-    font-size: clamp(1.9rem, 4.5vw, 3rem);
-    line-height: 1.5;
+  .section {
+    scroll-margin-top: 5rem;
+  }
+
+  .section-head {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .kicker {
+    color: var(--color-accent);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+
+  h2 {
+    font-size: clamp(1.35rem, 3vw, 1.75rem);
+    line-height: 1.6;
+    margin: 0;
+    background: linear-gradient(120deg, #f4f7ff 30%, var(--color-accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ---------- hero ---------- */
+  .hero {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: center;
+    padding-block: clamp(1.5rem, 4vh, 3rem);
+  }
+
+  .hero h1 {
+    font-size: clamp(1.8rem, 4.2vw, 2.8rem);
+    line-height: 1.6;
     margin: 0 0 1rem;
     background: linear-gradient(120deg, #f4f7ff 30%, var(--color-accent));
     -webkit-background-clip: text;
@@ -63,26 +784,6 @@ import ExerciseList from "../components/ExerciseList";
     color: transparent;
   }
 
-  .home p {
-    margin-bottom: 1rem;
-  }
-  a {
-    color: var(--color-text-primary);
-    text-decoration: underline;
-    text-decoration-color: color-mix(
-      in srgb,
-      var(--color-accent) 50%,
-      transparent
-    );
-    text-underline-offset: 4px;
-    transition: color 0.2s;
-  }
-  a:hover {
-    color: var(--color-accent);
-  }
-  .hero {
-    padding-block: 2rem 3rem;
-  }
   .eyebrow {
     display: inline-flex;
     align-items: center;
@@ -98,6 +799,7 @@ import ExerciseList from "../components/ExerciseList";
     font-weight: 500;
     margin-bottom: 1.5rem;
   }
+
   .pulse {
     width: 8px;
     height: 8px;
@@ -105,6 +807,7 @@ import ExerciseList from "../components/ExerciseList";
     background: var(--color-accent);
     animation: pulse 2.4s ease-out infinite;
   }
+
   @keyframes pulse {
     0% {
       box-shadow: 0 0 0 0
@@ -117,16 +820,26 @@ import ExerciseList from "../components/ExerciseList";
       box-shadow: 0 0 0 0 transparent;
     }
   }
+
   .intro {
     color: var(--color-text-secondary);
-    max-width: 60ch;
+    max-width: 56ch;
     font-size: 1.05rem;
+    margin: 0 0 1.75rem;
   }
-  .start-link {
+
+  .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    align-items: center;
+  }
+
+  .btn-primary {
     display: inline-flex;
     align-items: center;
-    gap: 1rem;
-    padding: 0.75rem 1.75rem;
+    gap: 0.6rem;
+    padding: 0.7rem 1.5rem;
     background: var(--gradient-accent);
     color: #fff;
     text-decoration: none;
@@ -139,29 +852,498 @@ import ExerciseList from "../components/ExerciseList";
       box-shadow 0.2s,
       filter 0.2s;
   }
-  .start-link:hover {
+
+  .btn-primary:hover {
     color: #fff;
     filter: brightness(1.08);
     transform: translateY(-2px);
     box-shadow: 0 10px 36px
       color-mix(in srgb, var(--color-accent) 50%, transparent);
   }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 1.4rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    border-radius: 999px;
+    font-weight: 600;
+    transition:
+      transform 0.2s,
+      border-color 0.2s,
+      background 0.2s;
+  }
+
+  .btn-ghost:hover {
+    color: var(--color-text-primary);
+    transform: translateY(-2px);
+    background: var(--glass-bg-strong);
+    border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  }
+
+  .audience {
+    margin: 1.5rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+  }
+
+  .hero-figure {
+    margin: 0;
+  }
+
+  .hero-figure svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* ---------- hero svg ---------- */
+  .wire {
+    fill: none;
+  }
+
+  .flow {
+    animation: flowdash 1.4s linear infinite;
+  }
+
+  @keyframes flowdash {
+    to {
+      stroke-dashoffset: -22;
+    }
+  }
+
+  .hex-core {
+    animation: hexpulse 3s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  @keyframes hexpulse {
+    0%,
+    100% {
+      opacity: 0.85;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  .blink {
+    animation: blink 1.1s steps(1) infinite;
+  }
+
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  .svg-label {
+    fill: var(--color-text-secondary);
+    font-size: 12px;
+    font-family: monospace;
+    text-anchor: middle;
+  }
+
+  .svg-label-accent {
+    fill: var(--color-accent);
+    font-size: 10.5px;
+    font-family: "Vazirmatn", system-ui, sans-serif;
+  }
+
+  .svg-chip {
+    fill: var(--color-text-secondary);
+    font-size: 9px;
+    font-family: monospace;
+  }
+
+  /* ---------- stats ---------- */
+  .stats {
+    list-style: none;
+    margin: 0;
+    padding: 0.9rem clamp(0.75rem, 2vw, 1.5rem);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px;
+    box-shadow:
+      0 8px 32px rgba(2, 6, 16, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .stats li {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.5rem;
+  }
+
+  .stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    border-radius: 12px;
+    color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+  }
+
+  .stats strong {
+    display: block;
+    color: var(--color-text-primary);
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .stats span {
+    display: block;
+    color: var(--color-text-secondary);
+    font-size: 0.8125rem;
+  }
+
+  /* ---------- features ---------- */
+  .features {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+
+  .feature {
+    padding: 1.4rem 1.4rem 1.5rem;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px;
+    box-shadow:
+      0 8px 32px rgba(2, 6, 16, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition:
+      transform 0.2s,
+      border-color 0.2s;
+  }
+
+  .feature:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  }
+
+  .feature-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 12px;
+    color: #fff;
+    background: var(--gradient-accent);
+    box-shadow: 0 4px 18px
+      color-mix(in srgb, var(--color-accent) 35%, transparent);
+    margin-bottom: 1rem;
+  }
+
+  .feature h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    color: var(--color-text-primary);
+  }
+
+  .feature p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.9;
+    color: var(--color-text-secondary);
+  }
+
+  /* ---------- pipeline ---------- */
+  .pipeline-card {
+    margin: 0 0 1.5rem;
+    padding: clamp(0.75rem, 2vw, 1.5rem);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px;
+    box-shadow:
+      0 8px 32px rgba(2, 6, 16, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .pipeline-card svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .pipe-title {
+    fill: var(--color-text-primary);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .pipe-sub {
+    fill: var(--color-text-secondary);
+    font-size: 9px;
+    font-family: monospace;
+    letter-spacing: 0.5px;
+  }
+
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    counter-reset: step;
+  }
+
+  .step {
+    padding: 1.25rem;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px;
+  }
+
+  .step-num {
+    display: inline-block;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--color-accent);
+    margin-bottom: 0.6rem;
+  }
+
+  .step h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    color: var(--color-text-primary);
+  }
+
+  .step p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.9;
+    color: var(--color-text-secondary);
+  }
+
+  /* ---------- chapters ---------- */
+  .chapters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+
+  .chapter-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.4rem;
+    text-decoration: none;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px;
+    box-shadow:
+      0 8px 32px rgba(2, 6, 16, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition:
+      transform 0.2s,
+      border-color 0.2s;
+  }
+
+  .chapter-card:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  }
+
+  .chapter-num {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--color-accent);
+    margin-bottom: 0.6rem;
+  }
+
+  .chapter-card h3 {
+    margin: 0 0 0.35rem;
+    font-size: 1.05rem;
+    color: var(--color-text-primary);
+  }
+
+  .chapter-count {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+  }
+
+  .chapter-cta {
+    margin-top: auto;
+    padding-top: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--color-accent);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .all-exercises {
+    text-align: center;
+    margin: 1.75rem 0 0;
+  }
+
+  .all-exercises a,
+  .footer-links a {
+    color: var(--color-text-primary);
+    text-decoration: underline;
+    text-decoration-color: color-mix(
+      in srgb,
+      var(--color-accent) 50%,
+      transparent
+    );
+    text-underline-offset: 4px;
+    transition: color 0.2s;
+  }
+
+  .all-exercises a:hover,
+  .footer-links a:hover {
+    color: var(--color-accent);
+  }
+
+  /* ---------- contact ---------- */
+  .contact-card {
+    text-align: center;
+    padding: clamp(2rem, 5vw, 3rem) clamp(1.25rem, 4vw, 3rem);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 20px;
+    box-shadow:
+      0 8px 32px rgba(2, 6, 16, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .contact-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    color: #fff;
+    background: var(--gradient-accent);
+    box-shadow: 0 6px 28px
+      color-mix(in srgb, var(--color-accent) 40%, transparent);
+    margin-bottom: 1.25rem;
+  }
+
+  .contact-card h2 {
+    margin-bottom: 0.75rem;
+  }
+
+  .contact-text {
+    max-width: 48ch;
+    color: var(--color-text-secondary);
+    margin: 0 0 1.75rem;
+  }
+
+  /* ---------- footer ---------- */
   .footer {
-    margin-top: 2.5rem;
-    padding: 1.5rem 1.75rem;
+    padding: 1.75rem;
     border: 1px solid var(--glass-border);
     background: var(--glass-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-radius: 16px;
     box-shadow: 0 8px 32px rgba(2, 6, 16, 0.35);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .footer-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    background: linear-gradient(
+      120deg,
+      #f0f5ff,
+      var(--color-accent) 55%,
+      var(--color-accent-2)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .footer-tagline {
+    color: var(--color-text-secondary);
     font-size: 0.875rem;
+  }
+
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    justify-content: center;
+    font-size: 0.875rem;
+  }
+
+  .footer-note {
+    margin: 0;
+    font-size: 0.8125rem;
     color: var(--color-text-secondary);
   }
-  .footer p {
-    margin: 0 0 0.75rem;
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-figure {
+      max-width: 32rem;
+      margin-inline: auto;
+      width: 100%;
+    }
   }
-  .footer p:last-child {
-    margin-bottom: 0;
+
+  @media (prefers-reduced-motion: reduce) {
+    .flow,
+    .hex-core,
+    .blink,
+    .pulse {
+      animation: none;
+    }
   }
 </style>

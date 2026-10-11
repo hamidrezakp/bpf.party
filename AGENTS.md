@@ -6,7 +6,7 @@ Interactive eBPF tutorial: users write eBPF C in the browser, the backend compil
 
 | Path | What it is |
 |------|------------|
-| `website/` | Astro 5 + React 19 + Tailwind 3 static site (pnpm). Exercise UI, CodeMirror editor, in-browser TCC typecheck worker. |
+| `website/` | Astro 5 + React 19 + Tailwind 3 static site (pnpm). Landing page at `/` (Persian RTL), exercise list at `/exercises/`, how-it-works detail at `/how-it-works/`. Exercise UI, CodeMirror editor, in-browser TCC typecheck worker. |
 | `backend/` | Rust HTTP server (`touche`, thread-based, no async). `POST /run_code/<exercise-id>` → clang → VM pool → SSE; `GET /metrics`. |
 | `userspace/` | Rust guest `init` (`/main` in `rootfs.ext4`), static musl + libbpf. Loads the user's BPF object, runs the exercise workload, reports over vsock. |
 | `shared/` | Host↔guest protocol (`HostMessage`, `GuestMessage`), `ExerciseId`, and `get_answer()`. bincode on vsock. |
@@ -45,7 +45,7 @@ Changing `shared` changes the wire protocol: rebuild **both** `userspace` (and t
 
 ## Conventions and pitfalls
 
-- Content language: exercise MDX and chapter/exercise titles are **Persian (RTL)**; keep eBPF/kernel terms, identifiers, and code in English. The home page and editor stay LTR English.
+- Content language: exercise MDX, chapter/exercise titles, and the landing page are **Persian (RTL)**; keep eBPF/kernel terms, identifiers, and code in English. The editor UI stays LTR English.
 - SSE payloads are serde-tagged `{ "type": camelCase, "data": ... }`. When editing `PlatformMessage` (`backend/src/types.rs`) or `GuestMessage` (`shared`), update `website/src/types/sse-events.ts` to match.
 - Answers are derived from a random per-request `user_key`; user programs report them with `SUBMIT_*` macros from `ep_platform.h`.
 - Editing `backend/includes/task.h` requires regenerating `task.h.pch` (backend does this on startup via `compile::pre_compile`) and rebuilding the TCC WASM data.
