@@ -136,6 +136,26 @@ ph = shell(<<~BODY)
   #{flower_group(800, 450, 92, ring_stroke: "#8a93a8")}
 BODY
 
+# Technical series covers: a small diagram for each subject, using the same
+# glass panels and accent palette as the starter artwork.
+technical_covers = {
+  "bpf-history" => ["cBPF", "eBPF", "1992 / 2014"],
+  "bpf-maps" => ["BPF maps", "userspace", "per-CPU / ringbuf"],
+  "bpf-networking" => ["XDP", "tc / stack", "PASS / DROP / REDIRECT"],
+  "bpf-tooling" => ["BTF / CO-RE", "libbpf", "build / load / attach"],
+}.transform_values do |left, right, caption|
+  shell(<<~BODY)
+    #{glows}
+    #{hexes([[160, 160, 28], [1430, 730, 42], [1350, 180, 30]], opacity: 0.3)}
+    <rect x="220" y="290" width="460" height="270" rx="24" fill="rgba(255,255,255,0.05)" stroke="#7aa2ff" stroke-opacity="0.45" stroke-width="2"/>
+    <rect x="920" y="290" width="460" height="270" rx="24" fill="rgba(255,255,255,0.05)" stroke="#9d7bff" stroke-opacity="0.45" stroke-width="2"/>
+    <text x="450" y="435" text-anchor="middle" fill="#dfe6f1" font-family="monospace" font-size="40">#{left}</text>
+    <text x="1150" y="435" text-anchor="middle" fill="#dfe6f1" font-family="monospace" font-size="40">#{right}</text>
+    <path d="M680 425 H900 l-18 -12 m18 12 l-18 12" stroke="url(#accent)" stroke-width="4" fill="none"/>
+    <text x="800" y="660" text-anchor="middle" fill="#7aa2ff" font-family="monospace" font-size="28">#{caption}</text>
+  BODY
+end
+
 # ---- favicon: honeycomb cluster, gradient fill, page-colored gaps ----
 LOGO_PATHS = [
   "m175 0 43.7 25.3v50.5L175 101l-43.8-25.2V25.3L175 0Z",
@@ -163,6 +183,7 @@ SVG
   "images/posts/verifier-diagnostics.svg" => c3,
   "images/placeholder.svg" => ph,
   "favicon.svg" => favicon,
+  **technical_covers.transform_keys { |name| "images/posts/#{name}.svg" },
 }.each do |rel, content|
   path = File.join(OUT, rel)
   FileUtils.mkdir_p(File.dirname(path))

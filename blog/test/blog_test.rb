@@ -54,8 +54,13 @@ class BlogBuildTest < Minitest::Test
     @output = File.join(@tmp, "output")
     FileUtils.mkdir_p(@source)
     # Load helpers above; omit plugin copies to avoid registering hooks twice.
-    %w[_config.yml _includes _layouts _sass assets _posts index.html about.md 404.html robots.txt CNAME].each do |path|
+    %w[_config.yml _includes _layouts _sass assets index.html about.md 404.html robots.txt CNAME].each do |path|
       FileUtils.cp_r(File.join(SOURCE, path), @source)
+    end
+    # Keep the original navigation fixtures stable as the editorial catalog grows.
+    FileUtils.mkdir_p(File.join(@source, "_posts"))
+    %w[2026-10-08-what-is-ebpf.md 2026-10-09-firecracker-microvm.md 2026-10-10-verifier-diagnostics.md].each do |post|
+      FileUtils.cp(File.join(SOURCE, "_posts", post), File.join(@source, "_posts", post))
     end
     @config = Jekyll.configuration(
       "source" => @source,
@@ -143,5 +148,34 @@ class BlogBuildTest < Minitest::Test
     File.write(fixture, File.read(fixture).sub("تیم BPFLab <help@bpflab.ir>", "No email"))
     error = assert_raises(Jekyll::Errors::FatalException) { build }
     assert_includes error.message, "author must be written as Name <email>"
+  end
+
+  def test_full_editorial_catalog_is_published_and_paginated
+    Dir.glob(File.join(SOURCE, "_posts", "*.md")).each do |post|
+      FileUtils.cp(post, File.join(@source, "_posts"))
+    end
+    @config["paginate"] = 9
+    site = build
+    assert_equal Dir.glob(File.join(SOURCE, "_posts", "*.md")).size, site.posts.docs.size
+    site.posts.docs.each do |post|
+      page = File.join(@output, post.url, "index.html")
+      assert File.file?(page), "Missing article: #{post.url}"
+      assert_includes File.read(page), 'dir="rtl"'
+      if post.basename.start_with?("2026-10-11-")
+        assert post.data["summary"].to_s.length > 40, post.relative_path
+        assert_includes post.content, '<h2 id="منابع">منابع</h2>', post.relative_path
+        assert_match(/href="https:\/\//, post.content, post.relative_path)
+        image = File.join(@source, post.data["image"])
+        assert File.file?(image), "Missing cover: #{image}"
+      end
+    end
+    assert_includes html("index.html"), 'href="/preview/page/2/"'
+    assert File.file?(File.join(@output, "page/2/index.html"))
+    %w[feed.xml sitemap.xml].each do |path|
+      xml = html(path)
+      # jekyll-feed publishes the ten most recent posts; sitemap lists all.
+      posts = path == "feed.xml" ? site.posts.docs.sort_by(&:date).last(10) : site.posts.docs
+      posts.each { |post| assert_includes xml, "/preview#{post.url}" }
+    end
   end
 end
