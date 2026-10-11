@@ -36,49 +36,13 @@ const {
 
 <Layout hasCodeTabs={hasCode} title={exerciseTitle}>
   <div class="exercise-container" data-view="instructions">
-    {
-      hasCode && (
-        <>
-          <section
-            id="exercise-instructions"
-            class="content tab-content"
-            aria-label="راهنمای تمرین"
-          >
-            <div
-              class="content-scroll prose prose-invert max-w-none"
-              dir="rtl"
-              lang="fa"
-            >
-              <div class="content-body">
-                <p class="chapter-title">{chapterTitle}</p>
-                <h1>{exerciseTitle}</h1>
-                <slot />
-              </div>
-              <ExerciseNav
-                prevExercise={prevExercise}
-                nextExercise={nextExercise}
-              />
-            </div>
-          </section>
-          <section
-            id="exercise-editor"
-            class="editor-wrapper tab-content"
-            aria-label="ویرایشگر کد"
-          >
-            <InteractiveEditor
-              starterCode={starterCode}
-              exerciseId={exerciseId}
-              chapterId={chapterId}
-              codeFile={codeFile}
-            />
-          </section>
-        </>
-      )
-    }
-
-    {
-      !hasCode && (
-        <div class="content nocode">
+    {hasCode && (
+      <>
+        <section
+          id="exercise-instructions"
+          class="content tab-content"
+          aria-label="راهنمای تمرین"
+        >
           <div
             class="content-scroll prose prose-invert max-w-none"
             dir="rtl"
@@ -93,11 +57,43 @@ const {
               prevExercise={prevExercise}
               nextExercise={nextExercise}
             />
-            <MarkCompleted exerciseId={exerciseId} client:load />
           </div>
+        </section>
+        <section
+          id="exercise-editor"
+          class="editor-wrapper tab-content"
+          aria-label="ویرایشگر کد"
+        >
+          <InteractiveEditor
+            starterCode={starterCode}
+            exerciseId={exerciseId}
+            chapterId={chapterId}
+            codeFile={codeFile}
+          />
+        </section>
+      </>
+    )}
+
+    {!hasCode && (
+      <div class="content nocode">
+        <div
+          class="content-scroll prose prose-invert max-w-none"
+          dir="rtl"
+          lang="fa"
+        >
+          <div class="content-body">
+            <p class="chapter-title">{chapterTitle}</p>
+            <h1>{exerciseTitle}</h1>
+            <slot />
+          </div>
+          <ExerciseNav
+            prevExercise={prevExercise}
+            nextExercise={nextExercise}
+          />
+          <MarkCompleted exerciseId={exerciseId} client:load />
         </div>
-      )
-    }
+      </div>
+    )}
   </div>
 </Layout>
 

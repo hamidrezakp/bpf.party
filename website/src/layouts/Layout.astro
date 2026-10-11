@@ -69,41 +69,43 @@ const {
     ></style>
   </head>
   <body class:list={[hasCodeTabs && "workspace"]}>
-    <a class="skip-link" href="#main-content">رفتن به محتوای اصلی</a>
+    <a class="skip-link" href="#main-content">
+      رفتن به محتوای اصلی
+    </a>
     <nav class="navbar" aria-label="ناوبری اصلی">
       <div class="navbar-content">
         <div class="navbar-left">
           <a href="/" class="site-link" aria-label="BPFLab — صفحهٔ اصلی">
             <Logo stroke="currentColor" class="logo" aria-hidden="true" />
-            <span class="site-name" dir="ltr">BPFLab</span>
+            <span class="site-name" dir="ltr">
+              BPFLab
+            </span>
           </a>
         </div>
-        {
-          hasCodeTabs && (
-            <div class="navbar-tabs" aria-label="نمای تمرین">
-              <button
-                type="button"
-                data-view="instructions"
-                aria-controls="exercise-instructions"
-                aria-pressed="true"
-                class="tab-toggle"
-              >
-                <BookOpen size={18} aria-hidden="true" />
-                <span>راهنما</span>
-              </button>
-              <button
-                type="button"
-                data-view="code"
-                aria-controls="exercise-editor"
-                aria-pressed="false"
-                class="tab-toggle"
-              >
-                <Terminal size={18} aria-hidden="true" />
-                <span>کد</span>
-              </button>
-            </div>
-          )
-        }
+        {hasCodeTabs && (
+          <div class="navbar-tabs" aria-label="نمای تمرین">
+            <button
+              type="button"
+              data-view="instructions"
+              aria-controls="exercise-instructions"
+              aria-pressed="true"
+              class="tab-toggle"
+            >
+              <BookOpen size={18} aria-hidden="true" />
+              <span>راهنما</span>
+            </button>
+            <button
+              type="button"
+              data-view="code"
+              aria-controls="exercise-editor"
+              aria-pressed="false"
+              class="tab-toggle"
+            >
+              <Terminal size={18} aria-hidden="true" />
+              <span>کد</span>
+            </button>
+          </div>
+        )}
       </div>
     </nav>
     <main id="main-content" class="app-content" tabindex="-1">
@@ -251,7 +253,8 @@ const {
     .tab-toggle[aria-pressed="true"] {
       background: var(--gradient-accent);
       color: #fff;
-      box-shadow: 0 2px 14px color-mix(in srgb, var(--color-accent) 35%, transparent);
+      box-shadow: 0 2px 14px
+        color-mix(in srgb, var(--color-accent) 35%, transparent);
     }
 
     .tab-toggle:hover {

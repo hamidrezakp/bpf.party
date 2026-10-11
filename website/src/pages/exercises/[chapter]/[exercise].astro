@@ -1,5 +1,5 @@
 ---
-import { getEntry } from "astro:content";
+import { getEntry, render } from "astro:content";
 import {
   getExerciseByParams,
   getNavigationContext,
@@ -34,7 +34,7 @@ if (!entry) {
   return Astro.redirect("/404");
 }
 
-const { Content } = await entry.render();
+const { Content } = await render(entry);
 
 const hasCode = !!exerciseData.codeFile;
 let starterCode = null;

@@ -22,7 +22,8 @@
   background: var(--gradient-accent);
   border-color: transparent;
   color: #fff;
-  box-shadow: 0 2px 14px color-mix(in srgb, var(--color-accent) 35%, transparent);
+  box-shadow: 0 2px 14px
+    color-mix(in srgb, var(--color-accent) 35%, transparent);
 }
 
 .controlButton.pressed:hover {

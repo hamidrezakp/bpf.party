@@ -17,24 +17,26 @@ import ExerciseList from "../components/ExerciseList";
           کد بنویسید، کامپایل کنید و برنامه‌های eBPF را مستقیماً در مرورگر اجرا
           کنید؛ قدم‌به‌قدم با رفتار هستهٔ لینوکس آشنا شوید.
         </p>
-        <a class="start-link" href="/exercises/chapter-0/1_theory/"
-          >شروع یادگیری <span aria-hidden="true">←</span></a
-        >
+        <a class="start-link" href="/exercises/chapter-0/1_theory/">
+          شروع یادگیری <span aria-hidden="true">←</span>
+        </a>
       </header>
 
       <ExerciseList client:idle metadata={CONTENT_METADATA} />
     </div>
     <footer class="footer">
       <p>
-        مشکلی پیدا کردید یا ایده‌ای برای تمرین جدید دارید؟ آن را در <a
-          href="https://github.com/DavidVentura/ebpf.party/issues">مخزن پروژه</a
-        > مطرح کنید.
+        مشکلی پیدا کردید یا ایده‌ای برای تمرین جدید دارید؟ آن را در{" "}
+        <a href="https://github.com/DavidVentura/ebpf.party/issues">
+          مخزن پروژه
+        </a>{" "}
+        مطرح کنید.
       </p>
       <p>
-        این پروژه متن‌باز است. <a
-          href="https://github.com/DavidVentura/ebpf.party"
-          >کد و معماری پروژه را ببینید.</a
-        >
+        این پروژه متن‌باز است.{" "}
+        <a href="https://github.com/DavidVentura/ebpf.party">
+          کد و معماری پروژه را ببینید.
+        </a>
       </p>
     </footer>
   </div>
@@ -105,7 +107,8 @@ import ExerciseList from "../components/ExerciseList";
   }
   @keyframes pulse {
     0% {
-      box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 55%, transparent);
+      box-shadow: 0 0 0 0
+        color-mix(in srgb, var(--color-accent) 55%, transparent);
     }
     70% {
       box-shadow: 0 0 0 10px transparent;
@@ -129,7 +132,8 @@ import ExerciseList from "../components/ExerciseList";
     text-decoration: none;
     border-radius: 999px;
     font-weight: 700;
-    box-shadow: 0 6px 28px color-mix(in srgb, var(--color-accent) 35%, transparent);
+    box-shadow: 0 6px 28px
+      color-mix(in srgb, var(--color-accent) 35%, transparent);
     transition:
       transform 0.2s,
       box-shadow 0.2s,

@@ -1,5 +1,6 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  esbuild: { jsx: "automatic" },
+  // Astro's tsconfig sets `jsx: preserve`; instruct the oxc transform directly.
+  oxc: { jsx: { runtime: "automatic" } },
 });

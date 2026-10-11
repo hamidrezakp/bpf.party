@@ -2,11 +2,11 @@
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
-import tailwind from "@astrojs/tailwind";
+import tailwindcss from "@tailwindcss/vite";
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [mdx(), react(), tailwind()],
+  integrations: [mdx(), react()],
   markdown: {
     shikiConfig: {
       theme: "css-variables",
@@ -14,6 +14,7 @@ export default defineConfig({
     },
   },
   vite: {
+    plugins: [tailwindcss()],
     worker: {
       format: "es",
     },
