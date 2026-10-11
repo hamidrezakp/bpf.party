@@ -1,7 +1,8 @@
 .parsedEvent {
-  background: var(--color-bg-primary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-inline-start: 2px solid #4caf50;
-  border-radius: 2px;
+  border-radius: 8px;
   padding: 0.5rem;
   margin: 0;
 }
@@ -12,7 +13,7 @@
   align-items: center;
   margin-bottom: 0.5rem;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .eventType {

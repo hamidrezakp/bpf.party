@@ -1,27 +1,36 @@
 .runButton {
-  background: var(--color-accent);
-  color: var(--color-bg-primary);
+  background: var(--gradient-accent);
+  color: #fff;
   border: none;
   padding: 0.5rem;
   font-family: inherit;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: filter 0.2s;
-  border-radius: 6px;
+  transition:
+    filter 0.2s,
+    transform 0.15s,
+    box-shadow 0.2s;
+  border-radius: 10px;
   min-width: 100px;
   height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--color-accent) 35%, transparent);
 }
 
 .runButton:hover:not(:disabled) {
-  filter: brightness(0.9);
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 26px
+    color-mix(in srgb, var(--color-accent) 50%, transparent);
 }
 
 .runButton:disabled {
-  background: #555;
-  color: #888;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary);
   cursor: not-allowed;
+  box-shadow: none;
 }

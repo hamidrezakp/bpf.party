@@ -1,6 +1,6 @@
-# eBPF.party
+# BPFLab
 
-This repo holds the website, content, backend & userspace for ebpf.party.
+This repo holds the website, content, backend & userspace for BPFLab (formerly eBPF.party).
 
 The website uses Persian and RTL layout throughout. C code, compiler/verifier logs, and technical diagrams retain isolated LTR direction for readability.
 

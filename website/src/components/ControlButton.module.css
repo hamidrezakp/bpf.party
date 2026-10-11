@@ -1,9 +1,11 @@
 .controlButton {
-  background: var(--color-code-bg);
-  color: var(--color-code-fg);
-  border: 1px solid #66666666;
+  background: var(--glass-bg);
+  color: var(--color-text-primary);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   padding: 0.5rem;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -12,16 +14,17 @@
 }
 
 .controlButton:hover {
-  background: #333;
-  border-color: #666;
+  background: var(--glass-bg-strong);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .controlButton.pressed {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-bg-primary);
+  background: var(--gradient-accent);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 14px color-mix(in srgb, var(--color-accent) 35%, transparent);
 }
 
 .controlButton.pressed:hover {
-  filter: brightness(0.9);
+  filter: brightness(1.08);
 }

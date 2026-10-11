@@ -1,17 +1,18 @@
 export const darkTheme = {
-  bgPrimary: "#1e1f24",
-  bgSecondary: "color-mix(in hsl, var(--color-bg-primary), white 5%)",
-  codeBg: "#2a2e38",
+  bgPrimary: "#070b14",
+  bgSecondary: "rgba(255, 255, 255, 0.05)",
+  codeBg: "rgba(13, 18, 31, 0.85)",
   codeFg: "#fff",
 
-  textPrimary: "#d4d4d4",
-  textHighlight: "#fff",
-  textSecondary: "#888888",
-  accent: "#61afef",
-  alertBg: "#2e1e1e",
-  border: "#2a2e38",
-  navbarBg: "hsl(224, 14%, 16%)",
-  navbarBorder: "hsl(224, 10%, 10%)",
+  textPrimary: "#dfe6f1",
+  textHighlight: "#f5f8ff",
+  textSecondary: "#8a93a8",
+  accent: "#7aa2ff",
+  accent2: "#9d7bff",
+  alertBg: "rgba(244, 67, 54, 0.1)",
+  border: "rgba(255, 255, 255, 0.08)",
+  navbarBg: "rgba(8, 12, 22, 0.6)",
+  navbarBorder: "rgba(255, 255, 255, 0.08)",
 } as const;
 
 export const yellowTheme = {

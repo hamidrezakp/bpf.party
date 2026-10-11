@@ -1,11 +1,11 @@
 .chapter {
-  margin-bottom: 2rem;
+  margin-bottom: 2.25rem;
 }
 
 .chapterHeader {
   color: var(--color-text-primary);
   font-size: 1.25rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
 }
 
 .chapterNumber {
@@ -14,29 +14,36 @@
 }
 
 .chapterBox {
-  border: 1px solid var(--color-border);
-  background: var(--color-background-secondary);
-  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 16px;
   overflow: hidden;
+  box-shadow:
+    0 8px 32px rgba(2, 6, 16, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .exerciseRow {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.1rem;
   text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.18s ease;
 
   gap: 1rem;
   min-height: 1.7rem;
   /* the 'tick' is taller and otherwise moves everything */
 }
 
-.exerciseRow:last-child {
+.chapterBox > div:last-child .exerciseRow {
   border-bottom: none;
 }
 
 .exerciseRow:hover {
-  background-color: var(--color-code-bg);
+  background-color: color-mix(in srgb, var(--color-accent) 8%, transparent);
 }
 
 .exerciseHex {
@@ -44,6 +51,11 @@
   font-family: monospace;
   font-size: 0.9rem;
   min-width: 3rem;
+  transition: color 0.18s ease;
+}
+
+.exerciseRow:hover .exerciseHex {
+  color: var(--color-accent);
 }
 
 .exerciseCompletion {
@@ -61,6 +73,7 @@
   flex: 1;
   min-width: 0;
 }
+
 @media (max-width: 480px) {
   .exerciseRow {
     gap: 0.5rem;

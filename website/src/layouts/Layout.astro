@@ -31,7 +31,7 @@ const {
       href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <title>{title ? `${title} - eBPF.party` : "eBPF.party"}</title>
+    <title>{title ? `${title} - BPFLab` : "BPFLab"}</title>
     <style
       is:global
       set:html={`
@@ -44,10 +44,16 @@ const {
   --color-text-secondary: ${darkTheme.textSecondary};
   --color-text-highlight: ${darkTheme.textHighlight};
   --color-accent: ${darkTheme.accent};
+  --color-accent-2: ${darkTheme.accent2};
   --color-alert-bg: ${darkTheme.alertBg};
   --color-border: ${darkTheme.border};
   --color-navbar-bg: ${darkTheme.navbarBg};
   --color-navbar-border: ${darkTheme.navbarBorder};
+
+  --gradient-accent: linear-gradient(135deg, var(--color-accent), var(--color-accent-2));
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-bg-strong: rgba(255, 255, 255, 0.09);
+  --glass-border: rgba(255, 255, 255, 0.1);
 
   --astro-code-background: var(--color-code-bg);
   --astro-code-token-function: #61afef;
@@ -67,9 +73,9 @@ const {
     <nav class="navbar" aria-label="ناوبری اصلی">
       <div class="navbar-content">
         <div class="navbar-left">
-          <a href="/" class="site-link" aria-label="eBPF.party — صفحهٔ اصلی">
+          <a href="/" class="site-link" aria-label="BPFLab — صفحهٔ اصلی">
             <Logo stroke="currentColor" class="logo" aria-hidden="true" />
-            <span class="site-name" dir="ltr">eBPF.party</span>
+            <span class="site-name" dir="ltr">BPFLab</span>
           </a>
         </div>
         {
@@ -129,9 +135,13 @@ const {
   }
 
   .navbar {
-    z-index: 1;
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 100;
     border-bottom: 1px solid var(--color-navbar-border);
     background-color: var(--color-navbar-bg);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
   }
 
   .navbar-content {
@@ -156,11 +166,23 @@ const {
   .logo {
     height: 1.5rem;
     width: auto;
+    filter: drop-shadow(
+      0 0 14px color-mix(in srgb, var(--color-accent) 40%, transparent)
+    );
   }
 
   .site-name {
-    font-weight: 600;
-    font-size: 1.1rem;
+    font-weight: 700;
+    font-size: 1.15rem;
+    background: linear-gradient(
+      120deg,
+      #f0f5ff,
+      var(--color-accent) 55%,
+      var(--color-accent-2)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .navbar-tabs {
@@ -184,9 +206,12 @@ const {
     inset-inline-start: 1rem;
     transform: translateY(-150%);
     padding: 0.5rem 1rem;
-    background: var(--color-code-bg);
+    background: rgba(16, 21, 34, 0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--glass-border);
     color: var(--color-text-primary);
-    border-radius: 6px;
+    border-radius: 999px;
     z-index: 10;
   }
   .skip-link:focus {
@@ -200,16 +225,19 @@ const {
     .navbar-tabs {
       display: flex;
       gap: 0;
-      background: #111;
-      border-radius: 6px;
-      padding: 3px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 999px;
+      padding: 4px;
     }
 
     .tab-toggle {
       cursor: pointer;
       font-size: 1.25rem;
-      padding: 0.35rem 0.6rem;
-      border-radius: 4px;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
       background: transparent;
       transition: all 0.2s;
       user-select: none;
@@ -217,20 +245,23 @@ const {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #999;
+      color: var(--color-text-secondary);
     }
 
     .tab-toggle[aria-pressed="true"] {
-      background: var(--color-accent);
-      color: var(--color-bg-primary);
+      background: var(--gradient-accent);
+      color: #fff;
+      box-shadow: 0 2px 14px color-mix(in srgb, var(--color-accent) 35%, transparent);
     }
 
     .tab-toggle:hover {
       background: rgba(255, 255, 255, 0.1);
+      color: var(--color-text-primary);
     }
 
     .tab-toggle[aria-pressed="true"]:hover {
-      background: var(--color-accent);
+      background: var(--gradient-accent);
+      color: #fff;
     }
     .tab-toggle {
       gap: 0.35rem;

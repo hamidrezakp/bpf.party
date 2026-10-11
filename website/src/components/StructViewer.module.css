@@ -1,7 +1,9 @@
 .structViewer {
   padding: 1rem;
-  background: var(--color-bg-primary);
-  border-top: 1px solid var(--color-border);
+  background: rgba(10, 14, 24, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid var(--glass-border);
   max-height: 400px;
   overflow-y: auto;
 }
@@ -44,15 +46,16 @@
 
 .struct {
   margin-bottom: 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  background: var(--color-background-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  background: var(--glass-bg);
+  overflow: hidden;
 }
 
 .structHeader {
   padding: 0.5rem;
-  background: var(--color-code-bg);
-  border-bottom: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--glass-border);
   display: flex;
   justify-content: space-between;
   align-items: center;

@@ -11,11 +11,13 @@
   color: var(--color-text-highlight);
 }
 .prose kbd {
-  background: var(--color-code-bg);
-  border-radius: 4px;
-  border: 1px solid #3a3a3a;
-  border-inline-end: 3px solid #0a0a0a;
-  border-bottom: 3px solid #0a0a0a;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 6px;
+  border: 1px solid var(--glass-border);
+  border-inline-end: 3px solid rgba(0, 0, 0, 0.45);
+  border-bottom: 3px solid rgba(0, 0, 0, 0.45);
   color: var(--color-code-fg);
   display: inline-block;
   font-size: 0.85em;

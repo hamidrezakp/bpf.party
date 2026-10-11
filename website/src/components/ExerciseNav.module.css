@@ -1,24 +1,35 @@
 .exerciseNav {
   display: flex;
   justify-content: space-between;
-  border-top: 1px solid var(--color-border);
-  margin-top: 2rem;
+  gap: 1rem;
+  border-top: 1px solid var(--glass-border);
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
 }
 
 .navLink {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem;
-  border-radius: 8px;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 14px;
   text-decoration: none;
-  transition: background 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
   flex: 1;
   max-width: 49%;
   min-width: 0;
 }
 .navLink:hover {
-  background: var(--color-background-secondary);
+  background: var(--glass-bg-strong);
+  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  transform: translateY(-2px);
 }
 
 .navLink.prev {
@@ -32,7 +43,7 @@
 
 .navArrow {
   font-size: 1.5rem;
-  color: var(--color-text-primary);
+  color: var(--color-accent);
 }
 
 .navText {

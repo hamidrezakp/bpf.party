@@ -8,7 +8,10 @@ import ExerciseList from "../components/ExerciseList";
   <div class="home">
     <div class="content">
       <header class="hero">
-        <p class="eyebrow">از مفاهیم تا کد واقعی</p>
+        <p class="eyebrow">
+          <span class="pulse" aria-hidden="true"></span>
+          از مفاهیم تا کد واقعی
+        </p>
         <h1>eBPF را با تمرین یاد بگیرید</h1>
         <p class="intro">
           کد بنویسید، کامپایل کنید و برنامه‌های eBPF را مستقیماً در مرورگر اجرا
@@ -22,7 +25,6 @@ import ExerciseList from "../components/ExerciseList";
       <ExerciseList client:idle metadata={CONTENT_METADATA} />
     </div>
     <footer class="footer">
-      <hr />
       <p>
         مشکلی پیدا کردید یا ایده‌ای برای تمرین جدید دارید؟ آن را در <a
           href="https://github.com/DavidVentura/ebpf.party/issues">مخزن پروژه</a
@@ -50,10 +52,13 @@ import ExerciseList from "../components/ExerciseList";
   }
 
   .home h1 {
-    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-size: clamp(1.9rem, 4.5vw, 3rem);
     line-height: 1.5;
     margin: 0 0 1rem;
-    color: var(--color-text-primary);
+    background: linear-gradient(120deg, #f4f7ff 30%, var(--color-accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .home p {
@@ -62,36 +67,97 @@ import ExerciseList from "../components/ExerciseList";
   a {
     color: var(--color-text-primary);
     text-decoration: underline;
+    text-decoration-color: color-mix(
+      in srgb,
+      var(--color-accent) 50%,
+      transparent
+    );
+    text-underline-offset: 4px;
+    transition: color 0.2s;
   }
-  hr {
-    border-color: var(--color-border);
-    margin-bottom: 1em;
+  a:hover {
+    color: var(--color-accent);
   }
   .hero {
-    padding-block: 1rem 3rem;
+    padding-block: 2rem 3rem;
   }
   .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.35rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     color: var(--color-accent);
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+  }
+  .pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    animation: pulse 2.4s ease-out infinite;
+  }
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 55%, transparent);
+    }
+    70% {
+      box-shadow: 0 0 0 10px transparent;
+    }
+    100% {
+      box-shadow: 0 0 0 0 transparent;
+    }
   }
   .intro {
     color: var(--color-text-secondary);
     max-width: 60ch;
+    font-size: 1.05rem;
   }
   .start-link {
     display: inline-flex;
     align-items: center;
     gap: 1rem;
-    padding: 0.6rem 1.25rem;
-    background: var(--color-accent);
-    color: var(--color-bg-primary);
+    padding: 0.75rem 1.75rem;
+    background: var(--gradient-accent);
+    color: #fff;
     text-decoration: none;
-    border-radius: 8px;
-    font-weight: 600;
+    border-radius: 999px;
+    font-weight: 700;
+    box-shadow: 0 6px 28px color-mix(in srgb, var(--color-accent) 35%, transparent);
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s,
+      filter 0.2s;
+  }
+  .start-link:hover {
+    color: #fff;
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 36px
+      color-mix(in srgb, var(--color-accent) 50%, transparent);
   }
   .footer {
-    margin-top: 2rem;
+    margin-top: 2.5rem;
+    padding: 1.5rem 1.75rem;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(2, 6, 16, 0.35);
     font-size: 0.875rem;
     color: var(--color-text-secondary);
+  }
+  .footer p {
+    margin: 0 0 0.75rem;
+  }
+  .footer p:last-child {
+    margin-bottom: 0;
   }
 </style>
