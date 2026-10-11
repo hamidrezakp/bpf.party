@@ -225,7 +225,7 @@ const chips: Array<[string, number, number]> = [
             stroke-dasharray="4 7"
             marker-end="url(#heroArrowAccent)"
           ></path>
-          <text x="316" y="24" class="svg-label svg-label-accent">
+          <text x="316" y="14" class="svg-label svg-label-accent">
             SSE · رویدادهای زنده
           </text>
 
@@ -429,7 +429,7 @@ const chips: Array<[string, number, number]> = [
           </span>
           <div>
             <strong>{faNum(chapters.length)} فصل</strong>
-            <span>از مقدمه تا kprobeهای هسته</span>
+            <span class="stat-label">از مقدمه تا kprobeهای هسته</span>
           </div>
         </li>
         <li>
@@ -438,7 +438,7 @@ const chips: Array<[string, number, number]> = [
           </span>
           <div>
             <strong>{faNum(totalExercises)} تمرین عملی</strong>
-            <span>با اجرای واقعی در مرورگر</span>
+            <span class="stat-label">با اجرای واقعی در مرورگر</span>
           </div>
         </li>
         <li>
@@ -447,7 +447,7 @@ const chips: Array<[string, number, number]> = [
           </span>
           <div>
             <strong>هستهٔ واقعی لینوکس</strong>
-            <span>داخل microVM ایزوله</span>
+            <span class="stat-label">داخل microVM ایزوله</span>
           </div>
         </li>
         <li>
@@ -456,7 +456,7 @@ const chips: Array<[string, number, number]> = [
           </span>
           <div>
             <strong>متن‌باز</strong>
-            <span>کد و محتوا روی GitHub</span>
+            <span class="stat-label">کد و محتوا روی GitHub</span>
           </div>
         </li>
       </ul>
@@ -1008,7 +1008,7 @@ const chips: Array<[string, number, number]> = [
     font-weight: 600;
   }
 
-  .stats span {
+  .stat-label {
     display: block;
     color: var(--color-text-secondary);
     font-size: 0.8125rem;

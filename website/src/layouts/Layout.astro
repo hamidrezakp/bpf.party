@@ -180,6 +180,13 @@ const {
     color: var(--color-accent);
   }
 
+  .navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    min-width: 0;
+  }
+
   .logo {
     height: 1.5rem;
     width: auto;
@@ -205,15 +212,14 @@ const {
   .navbar-links {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    margin-inline-start: 1.25rem;
+    gap: 0.3rem;
   }
 
   .nav-link {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.4rem 0.7rem;
+    padding: 0.45rem 0.85rem;
     border-radius: 999px;
     color: var(--color-text-secondary);
     text-decoration: none;
@@ -318,8 +324,8 @@ const {
   }
 
   @media (max-width: 600px) {
-    .navbar-links {
-      margin-inline-start: 0.5rem;
+    .navbar-left {
+      gap: 0.6rem;
     }
 
     .nav-link-icon {
@@ -327,7 +333,7 @@ const {
     }
 
     .nav-link {
-      padding: 0.4rem 0.55rem;
+      padding: 0.45rem 0.6rem;
     }
   }
 </style>
