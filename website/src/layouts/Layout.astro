@@ -85,6 +85,9 @@ const {
             <a href="/exercises/" class="nav-link">
               تمرین‌ها
             </a>
+            <a href="https://blog.bpflab.ir/" class="nav-link">
+              وبلاگ
+            </a>
           </div>
         </div>
         {hasCodeTabs && (
@@ -314,6 +317,13 @@ const {
   }
 
   @media (max-width: 600px) {
+    .navbar-content {
+      height: auto;
+      min-height: 64px;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
     .navbar-left {
       gap: 0.6rem;
     }

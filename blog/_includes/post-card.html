@@ -1,0 +1,40 @@
+<li class="post-card">
+  <a class="post-card-link" href="{{ include.post.url | relative_url }}">
+    <span class="post-card-cover">
+      <img
+        src="{{ include.post.image | default: site.placeholder_image | relative_url }}"
+        alt=""
+        loading="lazy"
+        width="800"
+        height="450"
+      />
+    </span>
+    <div class="post-card-body">
+      <time class="post-card-date" datetime="{{ include.post.date | date_to_xmlschema }}">
+        {{- include.post.date | jdate -}}
+      </time>
+      <h2 class="post-card-title">{{ include.post.title | escape }}</h2>
+      <p class="post-card-summary">
+        {{-
+          include.post.summary
+          | default: include.post.excerpt
+          | strip_html
+          | truncate: 140
+          | escape
+        -}}
+      </p>
+      <span class="post-card-meta">
+        <img
+          class="author-avatar"
+          src="{{ include.post.author | gravatar: 64 }}"
+          alt=""
+          width="32"
+          height="32"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+        />
+        <bdi class="author-name">{{ include.post.author | author_name | escape }}</bdi>
+      </span>
+    </div>
+  </a>
+</li>

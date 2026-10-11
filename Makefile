@@ -1,4 +1,7 @@
 .PHONY: all website_bindings website website-install website-dev website-check website-test website-format website-docker
+.PHONY: blog blog-install blog-dev blog-check blog-test
+
+BUNDLE ?= bundle
 
 NOLIBC_INCLUDE ?= /usr/src/linux/tools/include/nolibc
 CFLAGS = -static -fno-ident -fno-asynchronous-unwind-tables -fno-unwind-tables -s -Os -nostdlib -I$(NOLIBC_INCLUDE) -include nolibc.h
@@ -28,6 +31,21 @@ website-format:
 
 website-docker:
 	docker compose build web
+
+blog-install:
+	cd blog && $(BUNDLE) install
+
+blog-dev:
+	cd blog && $(BUNDLE) exec jekyll serve --livereload
+
+blog:
+	cd blog && JEKYLL_ENV=production $(BUNDLE) exec jekyll build --strict_front_matter
+
+blog-test:
+	cd blog && $(BUNDLE) exec ruby -Itest test/blog_test.rb
+
+blog-check: blog blog-test
+	cd blog && $(BUNDLE) exec jekyll doctor
 
 backend/includes/kfuncs.h:
 	# generating this automatically requires a new pahole & bpftool

@@ -1,0 +1,84 @@
+---
+layout: default
+---
+<article class="post">
+  <header class="post-header">
+    {% if page.category %}
+      <p class="post-kicker">{{ page.category | escape }}</p>
+    {% endif %}
+    <h1 class="post-title">{{ page.title | escape }}</h1>
+    <div class="post-meta">
+      <img
+        class="author-avatar"
+        src="{{ page.author | gravatar: 96 }}"
+        alt=""
+        width="40"
+        height="40"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+      />
+      <span class="post-byline">
+        <bdi class="author-name">{{ page.author | author_name | escape }}</bdi>
+        <span class="post-date">
+          <time datetime="{{ page.date | date_to_xmlschema }}">
+            {{- page.date | jdate -}}
+          </time>
+          ·
+          <span class="reading-time">
+            {{ content | reading_time }} دقیقه مطالعه
+          </span>
+        </span>
+      </span>
+    </div>
+  </header>
+
+  {% if page.image %}
+    <figure class="post-cover">
+      <img
+        src="{{ page.image | relative_url }}"
+        alt=""
+        width="1600"
+        height="900"
+      />
+    </figure>
+  {% endif %}
+
+  <div class="post-content">
+    {{ content }}
+  </div>
+
+  {% if page.tags and page.tags.size > 0 %}
+    <ul class="post-tags" aria-label="برچسب‌ها">
+      {% for tag in page.tags %}
+        <li class="tag"><bdi>{{ tag | escape }}</bdi></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <nav class="post-nav" aria-label="ناوبری نوشته‌ها">
+    {% if page.previous %}
+      <a
+        class="post-nav-link prev"
+        href="{{ page.previous.url | relative_url }}"
+      >
+        <span class="post-nav-label">نوشتهٔ قدیمی‌تر</span>
+        <span class="post-nav-title">{{ page.previous.title | escape }}</span>
+      </a>
+    {% else %}
+      <span></span>
+    {% endif %}
+
+    <a class="post-nav-link all" href="{{ '/' | relative_url }}">
+      همهٔ نوشته‌ها
+    </a>
+
+    {% if page.next %}
+      <a class="post-nav-link next" href="{{ page.next.url | relative_url }}">
+        <span class="post-nav-label">نوشتهٔ جدیدتر</span>
+        <span class="post-nav-title">{{ page.next.title | escape }}</span>
+      </a>
+    {% else %}
+      <span></span>
+    {% endif %}
+  </nav>
+</article>

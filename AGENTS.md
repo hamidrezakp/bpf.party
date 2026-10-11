@@ -7,6 +7,7 @@ Interactive eBPF tutorial: users write eBPF C in the browser, the backend compil
 | Path | What it is |
 |------|------------|
 | `website/` | Astro 5 + React 19 + Tailwind 3 static site (pnpm). Landing page at `/` (Persian RTL), exercise list at `/exercises/`, how-it-works detail at `/how-it-works/`. Exercise UI, CodeMirror editor, in-browser TCC typecheck worker. |
+| `blog/` | Independent Jekyll 4 Persian RTL blog for `https://blog.bpflab.ir`. Posts in `_posts/`, Liquid layouts/includes, SCSS theme matching `website/`, custom author/Gravatar/Jalali helpers in `_plugins/bpflab.rb`. See README's Blog section for publishing and deployment. |
 | `backend/` | Rust HTTP server (`touche`, thread-based, no async). `POST /run_code/<exercise-id>` → clang → VM pool → SSE; `GET /metrics`. |
 | `userspace/` | Rust guest `init` (`/main` in `rootfs.ext4`), static musl + libbpf. Loads the user's BPF object, runs the exercise workload, reports over vsock. |
 | `shared/` | Host↔guest protocol (`HostMessage`, `GuestMessage`), `ExerciseId`, and `get_answer()`. bincode on vsock. |
@@ -20,12 +21,15 @@ The three Rust crates are **separate Cargo projects** (no workspace), each with 
 ## Commands
 
 - Website: `cd website && pnpm install && pnpm dev` (dev server talks to backend at `http://localhost:8081`, see `website/src/lib/api-client.ts`). Tests: `pnpm test` (vitest). Build: `pnpm build`.
+- Blog: `make blog-install`, `make blog-dev` (localhost:4000), `make blog-check` (production build + tests + Jekyll doctor). Output: `blog/_site/`; independent of the backend and Compose services.
 - TCC WASM artifacts (needed by the editor): `./scripts/fetch-artifacts.sh` (requires `emcc`).
 - Backend: `cd backend && cargo build --release`; runs from `backend/` reading `config.toml` (expects `./clang`, `../vmlinux`, `../rootfs.ext4`, hugepages, `/dev/kvm`).
 - Userspace must target musl: `cd userspace && LIBBPF_SYS_EXTRA_CFLAGS="-idirafter /usr/include/x86_64-linux-gnu -idirafter /usr/include" cargo build --release --target x86_64-unknown-linux-musl`. Prefer `make rootfs.ext4` (needs `NOLIBC_INCLUDE`).
 - Full host build: `./scripts/build-backend-artifacts.sh`. Full stack via Docker: `docker compose --profile full up --build` (slow: kernel compile).
 
 ## Tests
+
+- `blog/test/blog_test.rb` — Ruby helper and generated-site regression tests; `make blog-test`. Uses temporary destinations rather than changing published output.
 
 - `website/src/lib/struct-parser.test.ts` — the only frontend test.
 - `backend/tests/diag_golden.rs` boots a real VM per fixture in `backend/tests/data/diag/*.bpf.c` and compares against `.golden` (raw `DIAG1` section) and `.rendered` (final diagnostic). Needs KVM, the patched `vmlinux` (override with `EBPF_PARTY_TEST_VMLINUX`), `rootfs.ext4`, and `./clang`. Regenerate with `UPDATE_GOLDEN=1`. If you can't run it, say so rather than hand-editing goldens.
@@ -44,6 +48,9 @@ An exercise id is a kebab-case string that must match in **all** of these places
 Changing `shared` changes the wire protocol: rebuild **both** `userspace` (and the rootfs) and `backend`.
 
 ## Conventions and pitfalls
+
+- Blog posts use Persian Markdown with Gregorian `YYYY-MM-DD-slug.md` filenames and `author: "Name <email>"`. Use 16:9 cover images; a placeholder is the default. The plugin converts author metadata to a display name and Gravatar hash so raw author emails stay out of generated SEO/RSS. Preserve plugin loading; safe-mode/GitHub Pages automatic builds are unsuitable.
+- Blog SCSS tokens mirror `website/src/styles/theme.ts` and `Layout.astro`; update both when changing the shared visual theme. Website blog links point to the production subdomain. Publish only `blog/_site/`, keeping `test/`, `tools/`, and Ruby sources out of output.
 
 - Content language: exercise MDX, chapter/exercise titles, and the landing page are **Persian (RTL)**; keep eBPF/kernel terms, identifiers, and code in English. The editor UI stays LTR English.
 - SSE payloads are serde-tagged `{ "type": camelCase, "data": ... }`. When editing `PlatformMessage` (`backend/src/types.rs`) or `GuestMessage` (`shared`), update `website/src/types/sse-events.ts` to match.

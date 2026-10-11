@@ -1,0 +1,140 @@
+// ---------------------------------------------------------------------------
+// Base: design tokens + document defaults, mirroring website/src/layouts/Layout.astro
+// and website/src/styles/global.css so the blog matches the main site.
+// ---------------------------------------------------------------------------
+
+:root {
+  --color-bg-primary: #070b14;
+  --color-background-secondary: rgba(255, 255, 255, 0.05);
+  --color-code-bg: rgba(13, 18, 31, 0.85);
+  --color-code-fg: #fff;
+  --color-text-primary: #dfe6f1;
+  --color-text-secondary: #8a93a8;
+  --color-text-highlight: #f5f8ff;
+  --color-accent: #7aa2ff;
+  --color-accent-2: #9d7bff;
+  --color-alert-bg: rgba(244, 67, 54, 0.1);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-navbar-bg: rgba(8, 12, 22, 0.6);
+  --color-navbar-border: rgba(255, 255, 255, 0.08);
+
+  --gradient-accent: linear-gradient(
+    135deg,
+    var(--color-accent),
+    var(--color-accent-2)
+  );
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-bg-strong: rgba(255, 255, 255, 0.09);
+  --glass-border: rgba(255, 255, 255, 0.1);
+
+  // Code highlighting (One-Dark-ish palette, same as the website's shiki
+  // css-variables theme).
+  --code-token-function: #61afef;
+  --code-token-keyword: #e5c07b;
+  --code-token-string: #98c379;
+  --code-token-comment: #7d8799;
+  --code-token-number: #d19a66;
+  --code-token-type: #56b6c2;
+  --code-token-variable: #e06c75;
+  --code-token-operator: #c678dd;
+}
+
+html {
+  color-scheme: dark;
+  scroll-padding-top: 1rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background:
+    radial-gradient(
+      1200px 800px at 85% -10%,
+      rgba(122, 162, 255, 0.15),
+      transparent 60%
+    ),
+    radial-gradient(
+      1000px 700px at -15% 25%,
+      rgba(157, 123, 255, 0.12),
+      transparent 55%
+    ),
+    radial-gradient(
+      900px 900px at 55% 115%,
+      rgba(56, 189, 248, 0.07),
+      transparent 60%
+    ),
+    var(--color-bg-primary);
+  background-attachment: fixed;
+  color: var(--color-text-primary);
+  font-family: "Vazirmatn", system-ui, sans-serif;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  color: var(--color-text-highlight);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+// Latin embedded in RTL text must not leak direction into its surroundings;
+// code is always laid out LTR (same policy as the main website).
+[dir="ltr"] {
+  unicode-bidi: isolate;
+}
+
+pre,
+code,
+kbd,
+samp {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-family: monospace;
+}
+
+:not(pre) > code,
+kbd {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.skip-link {
+  position: fixed;
+  inset-block-start: 0.5rem;
+  inset-inline-start: 1rem;
+  transform: translateY(-150%);
+  padding: 0.5rem 1rem;
+  background: rgba(16, 21, 34, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-primary);
+  border-radius: 999px;
+  text-decoration: none;
+  z-index: 101;
+}
+
+.skip-link:focus {
+  transform: none;
+}

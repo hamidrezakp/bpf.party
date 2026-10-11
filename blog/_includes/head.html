@@ -1,0 +1,26 @@
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#070b14" />
+{% if page.url == '/404.html' %}
+<meta name="robots" content="noindex" />
+{% endif %}
+<link
+  rel="icon"
+  type="image/svg+xml"
+  href="{{ '/assets/favicon.svg' | relative_url }}"
+/>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<link
+  rel="stylesheet"
+  href="{{ '/assets/css/main.css' | relative_url }}"
+/>
+{% feed_meta %}
+{% seo %}
+</head>

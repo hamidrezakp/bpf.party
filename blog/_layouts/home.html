@@ -1,0 +1,29 @@
+---
+layout: default
+---
+<div class="home">
+  <header class="hero">
+    <p class="eyebrow">
+      <span class="pulse" aria-hidden="true"></span>
+      وبلاگ BPFLab
+    </p>
+    <h1>یادداشت‌هایی از دنیای eBPF</h1>
+    <p class="intro">
+      آموزش‌ها، تجربه‌ها و اخبار پروژه — از ورودی‌های هستهٔ لینوکس و وریفایر
+      تا ابزارهای observability و زیرساخت؛ به قلم تیم BPFLab.
+    </p>
+  </header>
+
+  <section class="posts-section" aria-label="فهرست نوشته‌ها">
+    {% if paginator.posts.size > 0 %}
+      <ul class="posts-grid">
+        {% for post in paginator.posts %}
+          {% include post-card.html post=post %}
+        {% endfor %}
+      </ul>
+      {% include pagination.html %}
+    {% else %}
+      <p class="intro">هنوز نوشته‌ای منتشر نشده است.</p>
+    {% endif %}
+  </section>
+</div>

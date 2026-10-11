@@ -1,0 +1,29 @@
+{% if paginator.total_pages > 1 %}
+  <nav class="pagination" aria-label="صفحه‌بندی نوشته‌ها">
+    {% if paginator.previous_page %}
+      <a
+        class="page-link"
+        href="{{ paginator.previous_page_path | relative_url }}"
+      >
+        <span aria-hidden="true">→</span>
+        نوشته‌های جدیدتر
+      </a>
+    {% else %}
+      <span class="page-link disabled" aria-hidden="true"></span>
+    {% endif %}
+
+    <span class="page-status" aria-live="polite">
+      صفحهٔ {{ paginator.page | to_persian }} از
+      {{ paginator.total_pages | to_persian }}
+    </span>
+
+    {% if paginator.next_page %}
+      <a class="page-link" href="{{ paginator.next_page_path | relative_url }}">
+        نوشته‌های قدیمی‌تر
+        <span aria-hidden="true">←</span>
+      </a>
+    {% else %}
+      <span class="page-link disabled" aria-hidden="true"></span>
+    {% endif %}
+  </nav>
+{% endif %}

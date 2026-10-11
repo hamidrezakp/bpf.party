@@ -1,0 +1,76 @@
+# BPFLab blog — Jekyll configuration.
+# Served at https://blog.bpflab.ir ; Persian (fa) content, RTL, dark theme
+# mirroring the Astro website in ../website.
+
+title: وبلاگ BPFLab
+tagline: یادداشت‌هایی دربارهٔ eBPF، هستهٔ لینوکس و زیرساخت
+email: help@bpflab.ir
+description: >-
+  آموزش‌ها و یادداشت‌های تیم BPFLab دربارهٔ eBPF، هستهٔ لینوکس، ابزارهای
+  observability و زیرساخت — به فارسی.
+
+url: "https://blog.bpflab.ir"
+baseurl: ""
+main_site: "https://bpflab.ir"
+
+lang: fa
+locale: fa_IR
+placeholder_image: /assets/images/placeholder.svg
+
+timezone: Asia/Tehran
+permalink: /:year/:month/:day/:title/
+
+# Comments are intentionally not supported; there is no comment system,
+# only the contact e-mail above.
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    block:
+      line_numbers: false
+
+highlighter: rouge
+
+sass:
+  style: compressed
+  sass_dir: _sass
+
+# Home page shows posts as a tile grid, newest first.
+paginate: 9
+paginate_path: "/page/:num/"
+
+plugins:
+  - jekyll-feed
+  - jekyll-paginate
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+twitter:
+  card: summary_large_image
+
+defaults:
+  # Every post gets the post layout and a default author; front matter can
+  # always override either. The author field format is `Name <email>` and the
+  # avatar is rendered from Gravatar (see _plugins/bpflab.rb).
+  - scope:
+      path: "_posts"
+      type: posts
+    values:
+      layout: post
+      author: "تیم BPFLab <help@bpflab.ir>"
+  # Fallback social-sharing image for pages without their own image.
+  - scope:
+      path: ""
+    values:
+      image: /assets/images/placeholder.svg
+
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - tools
+  - test
+  - .bundle
