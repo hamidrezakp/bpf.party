@@ -1,7 +1,7 @@
 .exerciseNav {
   display: flex;
   justify-content: space-between;
-  border-top: 1px solid #444;
+  border-top: 1px solid var(--color-border);
   margin-top: 2rem;
 }
 
@@ -15,6 +15,10 @@
   transition: background 0.2s;
   flex: 1;
   max-width: 49%;
+  min-width: 0;
+}
+.navLink:hover {
+  background: var(--color-background-secondary);
 }
 
 .navLink.prev {
@@ -39,13 +43,12 @@
 
 .navLabel {
   font-size: 0.85rem;
-  color: #999;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
 }
 
 .navTitle {
   font-size: 1rem;
   color: var(--color-text-primary);
   font-weight: 500;
+  overflow-wrap: anywhere;
 }

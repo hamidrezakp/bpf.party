@@ -2,9 +2,13 @@
   background-color: var(--color-code-bg);
 }
 
-.prose a, .prose h1, .prose h2, .prose h3, .prose h4, .prose strong {
+.prose a,
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose strong {
   color: var(--color-text-highlight);
-
 }
 .prose kbd {
   background: var(--color-code-bg);
@@ -40,6 +44,10 @@
 
 .prose pre {
   line-height: 1.4;
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: start;
+  max-width: 100%;
 }
 
 .prose h2 {
@@ -55,6 +63,29 @@
   margin-bottom: 1em;
 }
 
+.prose :is(ul, ol) {
+  padding-inline-start: 1.625em;
+  padding-inline-end: 0;
+}
+.prose :is(ul, ol) > li {
+  padding-inline-start: 0.375em;
+  padding-inline-end: 0;
+}
+.prose blockquote {
+  border-inline-start: 0.25rem solid var(--color-border);
+  border-inline-end: 0;
+  padding-inline-start: 1rem;
+  padding-inline-end: 0;
+}
+.prose :is(th, td) {
+  text-align: start;
+}
+.prose svg {
+  direction: ltr;
+  unicode-bidi: isolate;
+  max-width: 100%;
+}
+
 .prose code {
   padding: 3px;
   border-radius: 4px;
@@ -63,7 +94,8 @@
 .prose pre code {
   padding: 0px;
 }
-.prose code::before, .prose code::after {
+.prose code::before,
+.prose code::after {
   content: unset;
 }
 
@@ -79,8 +111,4 @@
 .content-scroll[dir="rtl"] pre code {
   direction: ltr;
   text-align: left;
-}
-
-.content-scroll[dir="rtl"] :global(.navArrow) svg {
-  transform: scaleX(-1);
 }

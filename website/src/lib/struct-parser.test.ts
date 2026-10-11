@@ -6,10 +6,30 @@ describe("struct-parser", () => {
   it("should parse event struct with pid, ppid, and comm (without prefix)", () => {
     // Input data without the 2-byte prefix
     const data = [
-      99, 0, 0, 0, // pid: 99 (little-endian u32)
-      11, 0, 0, 0, // ppid: 11 (little-endian u32)
-      116, 114, 117, 101, // "true" in ASCII
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // remaining nulls (16 bytes total)
+      99,
+      0,
+      0,
+      0, // pid: 99 (little-endian u32)
+      11,
+      0,
+      0,
+      0, // ppid: 11 (little-endian u32)
+      116,
+      114,
+      117,
+      101, // "true" in ASCII
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0, // remaining nulls (16 bytes total)
     ];
 
     // TypeInfo for struct event
@@ -82,7 +102,9 @@ describe("struct-parser", () => {
     expect(commField.name).toBe("comm");
     expect(commField.value.kind).toBe("string");
     if (commField.value.kind === "string") {
-      expect(commField.value.value).toBe("true\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0");
+      expect(commField.value.value).toBe(
+        "true\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
+      );
       expect(commField.value.rawBytes).toEqual([
         116, 114, 117, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       ]);
@@ -113,10 +135,8 @@ describe("struct-parser", () => {
     const scalarTypeInfo: TypeInfo = {
       kind: "scalar",
       name: "int",
-      type: "int",
       size: 4,
       align: 4,
-      offset: 0,
       unsigned: false,
     };
 
@@ -189,9 +209,18 @@ describe("struct-parser", () => {
 
     // Data: nested.x=10, nested.y=20, z=30
     const data = [
-      10, 0, 0, 0, // x: 10
-      20, 0, 0, 0, // y: 20
-      30, 0, 0, 0, // z: 30
+      10,
+      0,
+      0,
+      0, // x: 10
+      20,
+      0,
+      0,
+      0, // y: 20
+      30,
+      0,
+      0,
+      0, // z: 30
     ];
 
     const result = parseStruct(data, outerTypeInfo, typeRegistry);

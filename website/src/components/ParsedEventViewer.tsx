@@ -1,10 +1,6 @@
 import { useState } from "react";
 import type { TypeInfo } from "../types/typeinfo";
-import {
-  parseStruct,
-  type ParsedField,
-  type ParsedValue,
-} from "../lib/struct-parser";
+import { parseStruct, type ParsedField } from "../lib/struct-parser";
 import { debTypeRegistry } from "../lib/deb-type-registry";
 import styles from "./ParsedEventViewer.module.css";
 
@@ -49,7 +45,7 @@ function ParsedFieldComponent({
   onToggleNumber,
   depth,
 }: ParsedFieldProps) {
-  const indentStyle = { paddingLeft: `${depth * 0.5}rem` };
+  const indentStyle = { paddingInlineStart: `${depth * 0.5}rem` };
 
   if (field.value.kind === "scalar") {
     const mode = numberModes[path] || "decimal";
@@ -58,28 +54,11 @@ function ParsedFieldComponent({
     if (mode === "decimal") {
       displayValue = field.value.value.toString();
     } else {
-      const numVal =
-        typeof field.value.value === "bigint"
-          ? field.value.value
-          : field.value.value;
-
-      if (typeof numVal === "bigint") {
-        const unsigned = numVal < 0n ? BigInt.asUintN(64, numVal) : numVal;
-        displayValue = "0x" + unsigned.toString(16);
-      } else if (numVal < 0) {
-        const absVal = Math.abs(numVal);
-        let unsigned: number;
-        if (absVal <= 128) {
-          unsigned = numVal & 0xff;
-        } else if (absVal <= 32768) {
-          unsigned = numVal & 0xffff;
-        } else {
-          unsigned = numVal >>> 0;
-        }
-        displayValue = "0x" + unsigned.toString(16);
-      } else {
-        displayValue = "0x" + numVal.toString(16);
-      }
+      const unsigned = BigInt.asUintN(
+        field.size * 8,
+        BigInt(field.value.value),
+      );
+      displayValue = "0x" + unsigned.toString(16);
     }
 
     return (
@@ -90,6 +69,7 @@ function ParsedFieldComponent({
         <button
           className={styles.toggleButton}
           onClick={() => onToggleNumber(path)}
+          aria-label={`تغییر نمایش عدد ${field.name}`}
         >
           [
           <span className={mode === "decimal" ? styles.activeMode : ""}>
@@ -128,6 +108,7 @@ function ParsedFieldComponent({
         <button
           className={styles.toggleButton}
           onClick={() => onToggleString(path)}
+          aria-label={`تغییر نمایش رشتهٔ ${field.name}`}
         >
           [
           <span className={mode === "string" ? styles.activeMode : ""}>
@@ -144,7 +125,7 @@ function ParsedFieldComponent({
     if (field.type == "in_addr") {
       const s_addr_field = field.value.fields.find((f) => f.name === "s_addr");
       if (!s_addr_field || s_addr_field.value.kind !== "scalar") {
-        return <div className={styles.field}>Invalid in_addr structure</div>;
+        return <div className={styles.field}>ساختار in_addr نامعتبر است</div>;
       }
 
       const value = s_addr_field.value.value;
@@ -172,6 +153,7 @@ function ParsedFieldComponent({
           <button
             className={styles.toggleButton}
             onClick={() => onToggleNumber(path)}
+            aria-label={`تغییر نمایش آدرس ${field.name}`}
           >
             [
             <span className={mode === "decimal" ? styles.activeMode : ""}>
@@ -210,7 +192,7 @@ function ParsedFieldComponent({
   }
 
   if (field.value.kind === "array") {
-    const nestedIndentStyle = { paddingLeft: `${(depth + 1) * 1.5}rem` };
+    const nestedIndentStyle = { paddingInlineStart: `${(depth + 1) * 1.5}rem` };
     return (
       <>
         <div className={styles.field}>
@@ -229,7 +211,9 @@ function ParsedFieldComponent({
             <span className={styles.fieldValue}>
               {element.kind === "scalar"
                 ? element.value.toString()
-                : JSON.stringify(element)}
+                : JSON.stringify(element, (_, value) =>
+                    typeof value === "bigint" ? value.toString() : value,
+                  )}
             </span>
           </div>
         ))}
@@ -270,11 +254,11 @@ export default function ParsedEventViewer({
     return (
       <div className={styles.parsedEvent}>
         <div className={styles.eventHeader}>
-          <span className={styles.eventError}>Parse Error</span>
+          <span className={styles.eventError}>خطای خواندن رویداد</span>
         </div>
         <div className={styles.errorMessage}>
-          Data too short: expected at least 2 bytes for type prefix, got{" "}
-          {data.length}
+          داده کوتاه است؛ حداقل ۲ بایت برای شناسهٔ نوع لازم است. تعداد بایت‌ها:{" "}
+          {data.length.toLocaleString("fa-IR")}
         </div>
       </div>
     );
@@ -289,10 +273,11 @@ export default function ParsedEventViewer({
     return (
       <div className={styles.parsedEvent}>
         <div className={styles.eventHeader}>
-          <span className={styles.eventError}>Parse Error</span>
+          <span className={styles.eventError}>خطای خواندن رویداد</span>
         </div>
         <div className={styles.errorMessage}>
-          Unknown counter: {counter} (not found in debug type registry)
+          شناسهٔ رویداد {counter.toLocaleString("fa-IR")} در اطلاعات نوع پیدا
+          نشد.
         </div>
       </div>
     );
@@ -303,14 +288,18 @@ export default function ParsedEventViewer({
 
   // Handle scalar type (type_id 2) - has 3-byte header with size
   if (typeId === 2) {
-    if (data.length < 3) {
+    if (
+      data.length < 3 ||
+      ![1, 2, 4, 8].includes(data[2]) ||
+      data.length < 3 + data[2]
+    ) {
       return (
         <div className={styles.parsedEvent}>
           <div className={styles.eventHeader}>
-            <span className={styles.eventError}>Parse Error</span>
+            <span className={styles.eventError}>خطای خواندن رویداد</span>
           </div>
           <div className={styles.errorMessage}>
-            Scalar type requires 3-byte header, got {data.length} bytes
+            طول یا اندازهٔ دادهٔ عددی نامعتبر است.
           </div>
         </div>
       );
@@ -364,8 +353,12 @@ export default function ParsedEventViewer({
     return (
       <div className={styles.parsedEvent}>
         <div className={styles.eventHeader}>
-          <span className={styles.eventType}>{label}</span>
-          <span className={styles.eventSize}>({size} bytes)</span>
+          <bdi dir="ltr" className={styles.eventType}>
+            {label}
+          </bdi>
+          <span className={styles.eventSize}>
+            ({size.toLocaleString("fa-IR")} بایت)
+          </span>
         </div>
         <div className={styles.fields}>
           <div className={styles.field}>
@@ -373,6 +366,7 @@ export default function ParsedEventViewer({
             <button
               className={styles.toggleButton}
               onClick={() => toggleNumberMode("_scalar")}
+              aria-label="تغییر نمایش عدد"
             >
               [
               <span className={mode === "decimal" ? styles.activeMode : ""}>
@@ -417,8 +411,12 @@ export default function ParsedEventViewer({
     return (
       <div className={styles.parsedEvent}>
         <div className={styles.eventHeader}>
-          <span className={styles.eventType}>{label}</span>
-          <span className={styles.eventSize}>({actualData.length} bytes)</span>
+          <bdi dir="ltr" className={styles.eventType}>
+            {label}
+          </bdi>
+          <span className={styles.eventSize}>
+            ({actualData.length.toLocaleString("fa-IR")} بایت)
+          </span>
         </div>
         <div className={styles.fields}>
           <div className={styles.field}>
@@ -426,6 +424,7 @@ export default function ParsedEventViewer({
             <button
               className={styles.toggleButton}
               onClick={() => toggleCharArrayMode("_string")}
+              aria-label="تغییر نمایش رشته"
             >
               [
               <span className={mode === "string" ? styles.activeMode : ""}>
@@ -451,10 +450,10 @@ export default function ParsedEventViewer({
     return (
       <div className={styles.parsedEvent}>
         <div className={styles.eventHeader}>
-          <span className={styles.eventError}>Parse Error</span>
+          <span className={styles.eventError}>خطای خواندن رویداد</span>
         </div>
         <div className={styles.errorMessage}>
-          Type '{typeName}' not found in type registry
+          نوع <bdi dir="ltr">{typeName}</bdi> در اطلاعات نوع پیدا نشد.
         </div>
       </div>
     );
@@ -466,10 +465,14 @@ export default function ParsedEventViewer({
     return (
       <div className={styles.parsedEvent}>
         <div className={styles.eventHeader}>
-          <span className={styles.eventType}>{label}</span>
-          <span className={styles.eventError}>Parse Error</span>
+          <bdi dir="ltr" className={styles.eventType}>
+            {label}
+          </bdi>
+          <span className={styles.eventError}>خطای خواندن رویداد</span>
         </div>
-        <div className={styles.errorMessage}>{parseResult.error}</div>
+        <div dir="ltr" lang="en" className={styles.errorMessage}>
+          {parseResult.error}
+        </div>
       </div>
     );
   }
@@ -477,8 +480,12 @@ export default function ParsedEventViewer({
   return (
     <div className={styles.parsedEvent}>
       <div className={styles.eventHeader}>
-        <span className={styles.eventType}>{label}</span>
-        <span className={styles.eventSize}>({actualData.length} bytes)</span>
+        <bdi dir="ltr" className={styles.eventType}>
+          {label}
+        </bdi>
+        <span className={styles.eventSize}>
+          ({actualData.length.toLocaleString("fa-IR")} بایت)
+        </span>
       </div>
       <div className={styles.fields}>
         {parseResult.parsed!.map((field, i) => (

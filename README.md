@@ -2,7 +2,7 @@
 
 This repo holds the website, content, backend & userspace for ebpf.party.
 
-Exercise instructions are translated to Persian with RTL layout in the instruction pane. The code editor and home page remain LTR English.
+The website uses Persian and RTL layout throughout. C code, compiler/verifier logs, and technical diagrams retain isolated LTR direction for readability.
 
 ## Quick start (Docker)
 
@@ -42,3 +42,21 @@ cd website && pnpm install && pnpm dev
 ```
 
 See [`docker/artifacts/README.md`](docker/artifacts/README.md) for artifact details.
+
+### Website tooling
+
+Use Node.js 22.12+ (22 or 24) and the pnpm version pinned in `website/package.json` (`corepack enable`).
+
+```bash
+make website-install   # reproducible dependency installation
+make website-dev       # development server
+make website-check     # Astro + TypeScript checks
+make website-test      # unit/regression tests (non-watch mode)
+make website-format    # Prettier, including Astro files
+make website           # production build; requires Emscripten TCC artifacts
+make website-docker    # build all website artifacts inside Docker
+```
+
+Saved code, editor settings, and progress are local to the browser. Unavailable or corrupt storage does not prevent using the editor. Debug output is limited to 1,000 events per run to keep the interface responsive; final answers and diagnostics are still shown.
+
+The website Docker image builds and verifies the frontend before copying only static output into an unprivileged nginx runtime. Build arguments `EMSDK_VERSION`, `NODE_VERSION`, and `NGINX_VERSION` allow overriding base images (including digest-pinned references). `/healthz` checks nginx independently of the optional backend. Fingerprinted Astro assets are cached for a year; HTML and stable-name TCC artifacts are revalidated. Unknown static routes return 404 instead of the home page.

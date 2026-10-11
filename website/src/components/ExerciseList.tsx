@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ContentMetadata } from "../lib/exercises-metadata";
 import styles from "./ExerciseList.module.css";
+import { readStorage } from "../lib/storage";
 
 interface ExerciseListProps {
   metadata: ContentMetadata;
@@ -8,7 +9,7 @@ interface ExerciseListProps {
 
 export default function ExerciseList({ metadata }: ExerciseListProps) {
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   useEffect(() => {
@@ -16,15 +17,14 @@ export default function ExerciseList({ metadata }: ExerciseListProps) {
     metadata.chapters.forEach((chapter) => {
       chapter.exercises.forEach((exercise) => {
         if (
-          localStorage.getItem(`exercise-completed-${exercise.exerciseId}`) ===
-          "true"
+          readStorage(`exercise-completed-${exercise.exerciseId}`) === "true"
         ) {
           completed.add(exercise.exerciseId);
         }
       });
     });
     setCompletedExercises(completed);
-  }, []);
+  }, [metadata]);
 
   return (
     <div className="chaptersList">
@@ -32,7 +32,7 @@ export default function ExerciseList({ metadata }: ExerciseListProps) {
         <section key={chapter.slug} className={styles.chapter}>
           <h2 className={styles.chapterHeader}>
             <span className={styles.chapterNumber}>
-              Chapter {chapter.number}:
+              فصل {chapter.number.toLocaleString("fa-IR")}:
             </span>{" "}
             {chapter.title}
           </h2>
@@ -46,13 +46,19 @@ export default function ExerciseList({ metadata }: ExerciseListProps) {
 
                 return (
                   <div key={exercise.slug}>
-                    <a
-                      href={url}
-                      className={styles.exerciseRow}
-                    >
-                      <span className={styles.exerciseHex}>{hexNum}</span>{" "}
-                      <span className={styles.exerciseCompletion}>
-                        {isCompleted && "✓"}
+                    <a href={url} className={styles.exerciseRow}>
+                      <span
+                        className={styles.exerciseHex}
+                        dir="ltr"
+                        aria-hidden="true"
+                      >
+                        {hexNum}
+                      </span>{" "}
+                      <span
+                        className={styles.exerciseCompletion}
+                        aria-label={isCompleted ? "تکمیل‌شده" : undefined}
+                      >
+                        {isCompleted && <span aria-hidden="true">✓</span>}
                       </span>{" "}
                       <span className={styles.exerciseTitle}>
                         {exercise.title}

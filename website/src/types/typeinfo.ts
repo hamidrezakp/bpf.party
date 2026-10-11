@@ -3,20 +3,21 @@ interface BaseTypeMember {
   type: string;
   offset: number;
   size: number;
+  align?: number;
 }
 
-interface StructTypeMember extends BaseTypeMember {
-  kind: 'struct';
-  members: TypeMember[];
+export interface StructTypeMember extends BaseTypeMember {
+  kind: "struct";
+  members?: TypeMember[];
 }
 
-interface ArrayTypeMember extends BaseTypeMember {
-  kind: 'array';
+export interface ArrayTypeMember extends BaseTypeMember {
+  kind: "array";
   element_count: number;
 }
 
-interface ScalarTypeMember extends BaseTypeMember {
-  kind: 'scalar';
+export interface ScalarTypeMember extends BaseTypeMember {
+  kind: "scalar";
   unsigned?: boolean;
 }
 
@@ -29,17 +30,19 @@ interface BaseTypeInfo {
 }
 
 interface StructTypeInfo extends BaseTypeInfo {
-  kind: 'struct';
+  kind: "struct";
   members: TypeMember[];
 }
 
 interface ArrayTypeInfo extends BaseTypeInfo {
-  kind: 'array';
+  kind: "array";
   element_count: number;
 }
 
 interface ScalarTypeInfo extends BaseTypeInfo {
-  kind: 'scalar';
+  kind: "scalar";
+  type?: string;
+  offset?: number;
   unsigned?: boolean;
 }
 

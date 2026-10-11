@@ -32,7 +32,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .closeButton:hover {
@@ -44,7 +46,7 @@
   margin-bottom: 1rem;
   border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: var(--color-bgSecondary);
+  background: var(--color-background-secondary);
 }
 
 .structHeader {
@@ -69,6 +71,7 @@
   row-gap: 0.25rem;
   font-family: monospace;
   align-items: baseline;
+  overflow-x: auto;
 }
 
 .memberHeader {
@@ -104,7 +107,7 @@
 .memberOffset,
 .memberSize {
   color: var(--color-text-secondary);
-  text-align: right;
+  text-align: end;
   min-width: 2.5rem;
 }
 

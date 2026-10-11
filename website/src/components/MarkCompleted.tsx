@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { writeStorage } from "../lib/storage";
 
 interface MarkCompletedProps {
   exerciseId: string;
@@ -6,7 +7,7 @@ interface MarkCompletedProps {
 
 export default function MarkCompleted({ exerciseId }: MarkCompletedProps) {
   useEffect(() => {
-    localStorage.setItem(`exercise-completed-${exerciseId}`, "true");
+    writeStorage(`exercise-completed-${exerciseId}`, "true");
   }, [exerciseId]);
 
   return null;

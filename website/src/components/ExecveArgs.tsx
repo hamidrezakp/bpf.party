@@ -45,7 +45,7 @@ export default function ExecveArgs({ args }: ExecveArgsProps) {
     if (arg.arrayValues) {
       return Math.max(
         argBoxWidth,
-        arg.arrayValues.length * (valueBoxWidth + valueBoxGap) - valueBoxGap
+        arg.arrayValues.length * (valueBoxWidth + valueBoxGap) - valueBoxGap,
       );
     }
     return argBoxWidth;

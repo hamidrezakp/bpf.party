@@ -1,16 +1,20 @@
-declare const self: DedicatedWorkerGlobalScope;
+declare const self: {
+  postMessage: (message: unknown) => void;
+  onmessage: ((event: MessageEvent<WorkerRequest>) => void) | null;
+};
+import type { WorkerRequest, TccError } from "../types/worker";
 
 interface EmscriptenModule {
   ccall: (
     ident: string,
     returnType: string,
     argTypes: string[],
-    args: any[]
+    args: any[],
   ) => any;
   UTF8ToString: (ptr: number, maxBytesToRead?: number) => string;
 }
 
-let Module: EmscriptenModule;
+let Module: EmscriptenModule | undefined;
 
 import("../wasm/syntax_check.mjs")
   .then((TCC: any) => {
@@ -35,28 +39,29 @@ import("../wasm/syntax_check.mjs")
   })
   .catch((err: Error) => {
     self.postMessage({
-      type: "stderr",
-      text: "Failed to load WASM: " + err.message,
+      type: "error",
+      message: "Failed to load WASM: " + err.message,
     });
   });
 
-self.onmessage = (e: MessageEvent) => {
+self.onmessage = (e: MessageEvent<WorkerRequest>) => {
   const { type } = e.data;
 
   switch (type) {
     case "typecheck": {
       const { code, withTypeInfo } = e.data;
 
-      if (Module.ccall) {
+      try {
+        if (!Module?.ccall) throw new Error("Compiler is not ready");
         const result = Module.ccall(
           "check_syntax",
           "number",
           ["string", "number"],
-          [code, withTypeInfo ? 1 : 0]
+          [code, withTypeInfo ? 1 : 0],
         );
 
-        const errors = [];
-        if (result !== 0) {
+        const errors: TccError[] = [];
+        {
           const errorCount = Module.ccall("get_error_count", "number", [], []);
 
           for (let i = 0; i < errorCount; i++) {
@@ -64,32 +69,31 @@ self.onmessage = (e: MessageEvent) => {
               "get_error_filename",
               "number",
               ["number"],
-              [i]
+              [i],
             );
             const lineNum = Module.ccall(
               "get_error_line_num",
               "number",
               ["number"],
-              [i]
+              [i],
             );
             const isWarning = Module.ccall(
               "get_error_is_warning",
               "number",
               ["number"],
-              [i]
+              [i],
             );
             const msgPtr = Module.ccall(
               "get_error_msg",
               "number",
               ["number"],
-              [i]
+              [i],
             );
 
             const filename = filenamePtr
               ? Module.UTF8ToString(filenamePtr)
               : null;
             const msg = msgPtr ? Module.UTF8ToString(msgPtr) : "<no message>";
-            const errorType = isWarning ? "Warning" : "Error";
 
             errors.push({
               filename,
@@ -114,13 +118,13 @@ self.onmessage = (e: MessageEvent) => {
             "get_debug_calls_buffer",
             "number",
             [],
-            []
+            [],
           );
           const debBufLen = Module.ccall(
             "get_debug_calls_length",
             "number",
             [],
-            []
+            [],
           );
 
           if (debBufPtr && debBufLen > 0) {
@@ -135,10 +139,10 @@ self.onmessage = (e: MessageEvent) => {
           debTypeInfo,
           errors,
         });
-      } else {
+      } catch (error) {
         self.postMessage({
-          type: "stderr",
-          text: "Error: Module.ccall is not ready.",
+          type: "error",
+          message: error instanceof Error ? error.message : String(error),
         });
       }
       break;

@@ -17,9 +17,9 @@ format:
   pid_t old_pid;                        offset:16;  size:4;
 ```
 
-همچنین می‌توانید <kbd>Ctrl</kbd>+<kbd>Click</kbd> روی `trace_event_raw_sched_process_exec` در ویرایشگر بزنید تا تعریف را ببینید.
+همچنین می‌توانید <span dir="ltr"><kbd>Ctrl</kbd>+<kbd>Click</kbd></span> روی `trace_event_raw_sched_process_exec` در ویرایشگر بزنید تا تعریف را ببینید.
 
-## The challenge
+## صورت تمرین
 **PID** و **filename** برنامه در حال اجرا را مستقیماً از داده رویداد استخراج کنید.
 
 گرفتن PID در این مورد ساده است، می‌توانیم مستقیماً آن را بخوانیم:
@@ -69,7 +69,7 @@ bpf_probe_read_kernel_str(fname, sizeof(fname), (void *)ctx + off);
 
 بعد از این، بافر `fname` پر می‌شود و می‌توانیم `DEBUG_STR` را روی آن فراخوانی کنیم.
 
-### Your task
+### کاری که باید انجام دهید
 
 اگر `DEBUG_STR`/`DEBUG_NUM` را همان‌طور که توضیح داده شد اضافه کرده باشید، چند برنامه معمولی می‌بینید، اما یکی متمایز است. با `SUBMIT_STR_LEN(buff, len)` آن را ارسال کنید.
 

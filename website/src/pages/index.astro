@@ -4,47 +4,55 @@ import { CONTENT_METADATA } from "../lib/exercises-metadata";
 import ExerciseList from "../components/ExerciseList";
 ---
 
-<Layout title="Home">
+<Layout title="آموزش عملی eBPF">
   <div class="home">
     <div class="content">
-      <p>
-        Learn eBPF through hands-on exercises. Write, compile, and run programs
-        directly from your browser.
-      </p>
+      <header class="hero">
+        <p class="eyebrow">از مفاهیم تا کد واقعی</p>
+        <h1>eBPF را با تمرین یاد بگیرید</h1>
+        <p class="intro">
+          کد بنویسید، کامپایل کنید و برنامه‌های eBPF را مستقیماً در مرورگر اجرا
+          کنید؛ قدم‌به‌قدم با رفتار هستهٔ لینوکس آشنا شوید.
+        </p>
+        <a class="start-link" href="/exercises/chapter-0/1_theory/"
+          >شروع یادگیری <span aria-hidden="true">←</span></a
+        >
+      </header>
 
-      <ExerciseList client:load metadata={CONTENT_METADATA} />
+      <ExerciseList client:idle metadata={CONTENT_METADATA} />
     </div>
-    <div class="footer">
+    <footer class="footer">
       <hr />
       <p>
-        Did you find an issue, or have an idea for a new exercise? Create an
-        issue in <a href="https://github.com/DavidVentura/ebpf.party"
-          >the repository</a
-        >.
+        مشکلی پیدا کردید یا ایده‌ای برای تمرین جدید دارید؟ آن را در <a
+          href="https://github.com/DavidVentura/ebpf.party/issues">مخزن پروژه</a
+        > مطرح کنید.
       </p>
       <p>
-        Curious about how it works? <a href="/how-it-works"
-          >Here's an explanation.</a
+        این پروژه متن‌باز است. <a
+          href="https://github.com/DavidVentura/ebpf.party"
+          >کد و معماری پروژه را ببینید.</a
         >
       </p>
-    </div>
+    </footer>
   </div>
 </Layout>
 
 <style>
   .home {
-    padding: 2rem;
-    padding-bottom: 0rem;
+    padding: clamp(1rem, 4vw, 3rem);
     max-width: 90ch;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    min-height: calc(100svh - 64px);
     justify-content: space-between;
   }
 
   .home h1 {
-    margin-bottom: 2rem;
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    line-height: 1.5;
+    margin: 0 0 1rem;
     color: var(--color-text-primary);
   }
 
@@ -56,7 +64,34 @@ import ExerciseList from "../components/ExerciseList";
     text-decoration: underline;
   }
   hr {
-    border-color: var(--color-text-primary);
+    border-color: var(--color-border);
     margin-bottom: 1em;
+  }
+  .hero {
+    padding-block: 1rem 3rem;
+  }
+  .eyebrow {
+    color: var(--color-accent);
+    font-size: 0.875rem;
+  }
+  .intro {
+    color: var(--color-text-secondary);
+    max-width: 60ch;
+  }
+  .start-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.6rem 1.25rem;
+    background: var(--color-accent);
+    color: var(--color-bg-primary);
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .footer {
+    margin-top: 2rem;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
   }
 </style>

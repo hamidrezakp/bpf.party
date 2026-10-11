@@ -1,7 +1,7 @@
-import { defineCollection } from 'astro:content';
+import { defineCollection } from "astro:content";
 
 const exercisesCollection = defineCollection({
-  type: 'content',
+  type: "content",
 });
 
 export const collections = {

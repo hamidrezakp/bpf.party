@@ -6,7 +6,7 @@ import ExecveArgs from '../../../components/ExecveArgs.tsx';
 
 System callها با tracepointهای مشخصی که تا الان استفاده کردیم متفاوت‌اند. از رویدادهای generic `entry` و `exit` استفاده می‌کنند که برای همه syscallها کار می‌کنند.
 
-## The generic syscall structure
+## ساختار عمومی syscall
 
 چون *صدها* system call (`open`, `write`, `execve`...) وجود دارد، هر کدام با مجموعه آرگومان‌های خود، کرنل برای tracepointها از یک ساختار generic استفاده می‌کند.
 
@@ -66,13 +66,13 @@ args={[
 اما یک جزئیات دیگر هم باید در نظر گرفته شود.
 
 
-### On address spaces
+### دربارهٔ فضای آدرس
 
 `ctx->args[0]` به حافظه‌ای که متعلق به پردازه فراخواننده است (مثلاً `bash`) اشاره می‌کند، یعنی حافظه **فضای کاربر**.
 
 کرنل برای امنیت جداسازی سخت بین حافظه کاربر و کرنل را اعمال می‌کند. یعنی نمی‌توانیم helperهای فضای کرنلی که قبلاً استفاده کردیم (مثل `bpf_probe_read_kernel_str`) را برای خواندن این داده به کار ببریم. به‌جای آن باید از [bpf_probe_read_user_str(dst, size, src)](https://docs.ebpf.io/linux/helper-function/bpf_probe_read_user_str/) استفاده کنیم.
 
-## Your task
+## کاری که باید انجام دهید
 
 1. pointer filename را از `ctx->args[0]` بسازید.
 2. رشته را از **فضای کاربر** به یک بافر محلی بخوانید.

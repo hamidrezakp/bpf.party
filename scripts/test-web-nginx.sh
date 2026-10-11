@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-IMAGE="${NGINX_TEST_IMAGE:-nginxinc/nginx-unprivileged:1.27-alpine}"
+IMAGE="${NGINX_TEST_IMAGE:-nginxinc/nginx-unprivileged:1.30-alpine}"
 CONFIG="${NGINX_TEST_CONFIG:-$ROOT/docker/nginx.conf}"
 TMP="$(mktemp -d)"
 TEST_CONFIG="$TMP/default.conf"
@@ -39,7 +39,9 @@ for attempt in {1..50}; do
   sleep 0.1
 done
 grep -qx 'website-only test' "$TMP/response"
-curl -fsS --max-time 5 "$URL/chapter/exercise" | grep -qx 'website-only test'
+status="$(curl -sS --max-time 5 -o /dev/null -w '%{http_code}' "$URL/chapter/exercise")"
+[ "$status" = 404 ] || { echo "Expected 404 for a missing static route, got $status" >&2; exit 1; }
+curl -fsS --max-time 5 "$URL/healthz" | grep -qx 'ok'
 
 for path in /metrics /run_code/test-exercise; do
   status="$(curl -sS --max-time 5 -o /dev/null -w '%{http_code}' "$URL$path")"

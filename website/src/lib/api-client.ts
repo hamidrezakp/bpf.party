@@ -7,72 +7,106 @@ export function runCode(
   exerciseId: string,
   onEvent: (event: SSEEvent) => void,
   onError: (error: string) => void,
-  onComplete: () => void
+  onComplete: () => void,
 ): () => void {
-  const abortController = new AbortController();
-  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  const controller = new AbortController();
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
 
-  fetch(`${API_BASE_URL}/run_code/${exerciseId}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/plain",
-    },
-    body: code,
-    signal: abortController.signal,
-  })
-    .then((response) => {
-      if (!response.ok) {
+  async function run() {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/run_code/${encodeURIComponent(exerciseId)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain",
+            Accept: "text/event-stream",
+          },
+          body: code,
+          signal: controller.signal,
+        },
+      );
+      if (controller.signal.aborted) {
+        await response.body?.cancel();
+        return;
+      }
+      if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      if (!response.body) {
-        throw new Error("Response body is null");
-      }
+      if (!response.body) throw new Error("Response body is null");
 
       reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let data: string[] = [];
 
-      function processText(text: string) {
+      function dispatch() {
+        if (data.length && !controller.signal.aborted) {
+          const event: SSEEvent = JSON.parse(data.join("\n"));
+          onEvent(event);
+        }
+        data = [];
+      }
+
+      function processLine(line: string) {
+        if (line === "") {
+          dispatch();
+          return;
+        }
+        if (line.startsWith(":")) return;
+        const colon = line.indexOf(":");
+        const field = colon < 0 ? line : line.slice(0, colon);
+        let value = colon < 0 ? "" : line.slice(colon + 1);
+        if (value.startsWith(" ")) value = value.slice(1);
+        if (field === "data") data.push(value);
+      }
+
+      function processText(text: string, final = false) {
         buffer += text;
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6);
-            if (data.trim()) {
-              const event: SSEEvent = JSON.parse(data);
-              onEvent(event);
-            }
-          }
+        let index: number;
+        while ((index = buffer.search(/[\r\n]/)) !== -1) {
+          // A trailing CR might be the first half of a CRLF in the next chunk.
+          if (!final && buffer[index] === "\r" && index === buffer.length - 1)
+            break;
+          const length =
+            buffer[index] === "\r" && buffer[index + 1] === "\n" ? 2 : 1;
+          processLine(buffer.slice(0, index));
+          buffer = buffer.slice(index + length);
+        }
+        if (final) {
+          if (buffer) processLine(buffer);
+          buffer = "";
+          dispatch();
         }
       }
 
-      function pump(): Promise<void> {
-        return reader!.read().then(({ done, value }) => {
-          if (done) {
-            onComplete();
-            return;
-          }
-
-          processText(decoder.decode(value, { stream: true }));
-          return pump();
-        });
+      while (!controller.signal.aborted) {
+        const { done, value } = await reader.read();
+        if (controller.signal.aborted) return;
+        if (done) {
+          processText(decoder.decode(), true);
+          if (!controller.signal.aborted) onComplete();
+          return;
+        }
+        processText(decoder.decode(value, { stream: true }));
       }
-
-      return pump();
-    })
-    .catch((error) => {
-      if (error.name === "AbortError") {
-        return;
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      const message = error instanceof Error ? error.message : String(error);
+      onEvent({ type: "requestError", data: message });
+      onError(message);
+    } finally {
+      try {
+        await reader?.cancel();
+      } catch {
+        /* The stream may already be closed. */
       }
-      onEvent({ type: "requestError", data: error.message });
-      onError(error.message);
-    });
+      reader?.releaseLock();
+    }
+  }
 
+  void run();
   return () => {
-    abortController.abort();
-    reader?.cancel();
+    controller.abort();
+    void reader?.cancel().catch(() => {});
   };
 }

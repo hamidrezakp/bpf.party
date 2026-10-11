@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.astro/
+src/wasm/
+public/tcc/
+pnpm-lock.yaml
+public/exercises-code/
+# Lesson prose is maintained separately; avoid wrapping embedded C examples.
+src/content/exercises/

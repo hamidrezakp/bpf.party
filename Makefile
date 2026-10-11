@@ -1,4 +1,4 @@
-.PHONY: all website_bindings website
+.PHONY: all website_bindings website website-install website-dev website-check website-test website-format website-docker
 
 NOLIBC_INCLUDE ?= /usr/src/linux/tools/include/nolibc
 CFLAGS = -static -fno-ident -fno-asynchronous-unwind-tables -fno-unwind-tables -s -Os -nostdlib -I$(NOLIBC_INCLUDE) -include nolibc.h
@@ -10,6 +10,24 @@ website_bindings: website/src/wasm/syntax_check.mjs website/public/tcc/syntax_ch
 
 website: website_bindings
 	cd website && pnpm run build
+
+website-install:
+	cd website && pnpm install --frozen-lockfile
+
+website-dev:
+	cd website && pnpm dev
+
+website-check:
+	cd website && pnpm check
+
+website-test:
+	cd website && pnpm test
+
+website-format:
+	cd website && pnpm format
+
+website-docker:
+	docker compose build web
 
 backend/includes/kfuncs.h:
 	# generating this automatically requires a new pahole & bpftool
@@ -26,14 +44,17 @@ tcc/config.h:
 	cd tcc && ./configure
 
 # tcc/em_include removed dep to speed up builds, need to debug
-tcc/syntax_check.wasm: tcc/config.h tcc/*.c tcc/*.h tcc/em_include/*.h tcc/em_include/bpf/*.h
-	cd tcc && bash embuild.sh
+tcc/syntax_check.wasm: Makefile tcc/embuild.sh tcc/config.h tcc/*.c tcc/*.h tcc/em_include/*.h tcc/em_include/bpf/*.h
+	cd tcc && EMCC_CFLAGS="-sINCOMING_MODULE_JS_API=locateFile,print,printErr,preRun" bash embuild.sh
 
 website/src/wasm/syntax_check.mjs: tcc/syntax_check.wasm
+	mkdir -p $(@D)
 	cp tcc/syntax_check.mjs $@
 website/public/tcc/syntax_check.data: tcc/syntax_check.wasm
+	mkdir -p $(@D)
 	cp tcc/syntax_check.data $@
 website/public/tcc/syntax_check.wasm: tcc/syntax_check.wasm
+	mkdir -p $(@D)
 	cp tcc/syntax_check.wasm $@
 
 rootfs:

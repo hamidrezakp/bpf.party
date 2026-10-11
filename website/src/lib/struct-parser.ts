@@ -35,7 +35,7 @@ function readLittleEndian(
   view: DataView,
   offset: number,
   size: number,
-  unsigned: boolean
+  unsigned: boolean,
 ): number | bigint {
   switch (size) {
     case 1:
@@ -66,7 +66,10 @@ function charArrayToString(bytes: number[]): string {
       result += "\\0";
     } else {
       const decoded = decoder.decode(new Uint8Array([bytes[i]]));
-      result += decoded === "\ufffd" ? `\\x${bytes[i].toString(16).padStart(2, "0")}` : decoded;
+      result +=
+        decoded === "\ufffd"
+          ? `\\x${bytes[i].toString(16).padStart(2, "0")}`
+          : decoded;
     }
   }
 
@@ -78,7 +81,7 @@ function parseScalar(view: DataView, member: ScalarTypeMember): ParsedValue {
     view,
     member.offset,
     member.size,
-    member.unsigned || false
+    member.unsigned || false,
   );
   return { kind: "scalar", value };
 }
@@ -86,7 +89,7 @@ function parseScalar(view: DataView, member: ScalarTypeMember): ParsedValue {
 function parseArray(
   view: DataView,
   member: ArrayTypeMember,
-  typeRegistry: { [name: string]: TypeInfo }
+  typeRegistry: { [name: string]: TypeInfo },
 ): ParsedValue {
   if (member.type === "char") {
     const bytes: number[] = [];
@@ -120,15 +123,15 @@ function parseArray(
         view,
         elementOffset,
         elementSize,
-        (elementTypeInfo as ScalarTypeMember).unsigned || false
+        (elementTypeInfo as ScalarTypeMember).unsigned || false,
       );
       elements.push({ kind: "scalar", value });
     } else if (elementTypeInfo.kind === "struct") {
       const nestedFields = parseMembers(
         view,
-        (elementTypeInfo as StructTypeMember).members,
+        elementTypeInfo.members,
         typeRegistry,
-        elementOffset
+        elementOffset,
       );
       elements.push({ kind: "struct", fields: nestedFields });
     }
@@ -140,7 +143,7 @@ function parseArray(
 function parseNestedStruct(
   view: DataView,
   member: StructTypeMember,
-  typeRegistry: { [name: string]: TypeInfo }
+  typeRegistry: { [name: string]: TypeInfo },
 ): ParsedValue {
   const nestedType = typeRegistry[member.type];
   if (!nestedType || nestedType.kind !== "struct") {
@@ -149,9 +152,9 @@ function parseNestedStruct(
 
   const fields = parseMembers(
     view,
-    nestedType.members,
+    nestedType.members ?? [],
     typeRegistry,
-    member.offset
+    member.offset,
   );
   return { kind: "struct", fields };
 }
@@ -160,7 +163,7 @@ function parseMembers(
   view: DataView,
   members: TypeMember[],
   typeRegistry: { [name: string]: TypeInfo },
-  baseOffset: number = 0
+  baseOffset: number = 0,
 ): ParsedField[] {
   const result: ParsedField[] = [];
 
@@ -180,7 +183,7 @@ function parseMembers(
       value = parseNestedStruct(
         view,
         adjustedMember as StructTypeMember,
-        typeRegistry
+        typeRegistry,
       );
     } else {
       continue;
@@ -201,7 +204,7 @@ function parseMembers(
 export function parseStruct(
   data: number[],
   typeInfo: TypeInfo,
-  typeRegistry: { [name: string]: TypeInfo }
+  typeRegistry: { [name: string]: TypeInfo },
 ): ParseResult {
   if (data.length < typeInfo.size) {
     return {

@@ -1,5 +1,11 @@
-import { useEffect, useRef, useState } from "react";
-import { TccWorkerClient } from "../lib/tcc-worker-client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { TccWorkerClient, type CheckResult } from "../lib/tcc-worker-client";
+import {
+  readStorage,
+  writeStorage,
+  removeStorage,
+  readLayout,
+} from "../lib/storage";
 import { runCode } from "../lib/api-client";
 import { debTypeRegistry } from "../lib/deb-type-registry";
 import CodeEditor from "./CodeEditor";
@@ -13,9 +19,7 @@ import type { TypeInfo } from "../types/typeinfo";
 import type { DebTypeInfo } from "../types/debtypeinfo";
 import type { SSEEvent } from "../types/sse-events";
 import styles from "./App.module.css";
-import RotateCcw from "lucide-react/dist/esm/icons/rotate-ccw";
-import Braces from "lucide-react/dist/esm/icons/braces";
-import Keyboard from "lucide-react/dist/esm/icons/keyboard";
+import { RotateCcw, Braces, Keyboard } from "lucide-react";
 
 interface AppProps {
   starterCode: string;
@@ -41,102 +45,116 @@ export default function App({
 
   const getInitialCode = () => {
     if (typeof window === "undefined") return starterCode;
-    const savedCode = localStorage.getItem(codeStorageKey);
+    const savedCode = readStorage(codeStorageKey);
     return savedCode !== null ? savedCode : starterCode;
   };
 
-  const [code, setCode] = useState(getInitialCode);
-  const [output, setOutput] = useState("Initializing WASM...");
+  const [code, setCode] = useState(starterCode);
+  const [output, setOutput] = useState("");
+  const [workerReady, setWorkerReady] = useState(false);
+  const [workerError, setWorkerError] = useState(false);
+  const [droppedEvents, setDroppedEvents] = useState(0);
   const [outputClass, setOutputClass] = useState<"warning" | "error" | "">("");
   const [typeInfo, setTypeInfo] = useState<{ [name: string]: TypeInfo }>({});
   const [selectedStructName, setSelectedStructName] = useState<string | null>(
-    null
+    null,
   );
   const [isRunning, setIsRunning] = useState(false);
   const [events, setEvents] = useState<SSEEvent[]>([]);
   const [savedLayout, setSavedLayout] = useState<
     { [key: string]: number } | undefined
   >(undefined);
+  const [layoutReady, setLayoutReady] = useState(false);
   const [compileAsYouType, setCompileAsYouType] = useState(true);
   const [vimMode, setVimMode] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const workerRef = useRef<TccWorkerClient | null>(null);
-  const hasOutputRef = useRef(false);
-  const compilationOutputRef = useRef("");
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(false);
+  const runningRef = useRef(false);
+  const checkVersionRef = useRef(0);
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const eventTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingEventsRef = useRef<SSEEvent[]>([]);
+  const debugEventCountRef = useRef(0);
+  const droppedEventCountRef = useRef(0);
   const abortRunRef = useRef<(() => void) | null>(null);
-  const lastCheckedCodeRef = useRef(getInitialCode());
-  const currentCodeRef = useRef(getInitialCode());
+  const currentCodeRef = useRef(starterCode);
+  const resetDialogRef = useRef<HTMLDialogElement | null>(null);
+
+  const displayResult = useCallback((result: CheckResult) => {
+    if (!mountedRef.current) return;
+    let text = result.output;
+    result.errors.forEach((error) => {
+      text += `${error.isWarning ? "Warning" : "Error"} at ${error.filename ?? "<unknown>"}:${error.lineNum}: ${error.msg}\n`;
+    });
+    if (result.result !== 0 && !text) text = "Syntax check failed.";
+    setOutput(text);
+    setOutputClass(
+      result.result !== 0 || result.errors.some((e) => !e.isWarning)
+        ? "error"
+        : text
+          ? "warning"
+          : "",
+    );
+    if (result.typeInfo) {
+      const parsed: TypeInfo[] = JSON.parse(result.typeInfo);
+      setTypeInfo(Object.fromEntries(parsed.map((type) => [type.name, type])));
+    }
+    if (result.debTypeInfo) {
+      const parsed: DebTypeInfo[] = JSON.parse(result.debTypeInfo);
+      debTypeRegistry.set(parsed);
+    }
+  }, []);
+
+  const performCheck = useCallback(
+    async (value: string, withTypeInfo = false) => {
+      const version = ++checkVersionRef.current;
+      try {
+        const result = await workerRef.current?.checkSyntax(
+          value,
+          withTypeInfo,
+        );
+        if (result && version === checkVersionRef.current)
+          displayResult(result);
+        return result;
+      } catch (error) {
+        if (mountedRef.current) {
+          setOutput(error instanceof Error ? error.message : String(error));
+          setOutputClass("error");
+        }
+        return undefined;
+      }
+    },
+    [displayResult],
+  );
 
   useEffect(() => {
+    mountedRef.current = true;
+    const initialCode = getInitialCode();
+    setCode(initialCode);
+    currentCodeRef.current = initialCode;
     const worker = new TccWorkerClient(
       () => {
-        setOutput("");
-        setOutputClass("");
-
-        if (code.trim()) {
-          worker.checkSyntax(code, true);
-        }
-      },
-      (text) => {
-        compilationOutputRef.current += text + "\n";
-        hasOutputRef.current = true;
-      },
-      (text) => {
-        compilationOutputRef.current += text + "\n";
-        hasOutputRef.current = true;
-      },
-      (result, typeInfoJson, debTypeInfoJson, timing, errors) => {
-        if (typeInfoJson) {
-          const parsed: TypeInfo[] = JSON.parse(typeInfoJson);
-          const typeInfoObj = parsed.reduce(
-            (acc, t) => ({ ...acc, [t.name]: t }),
-            {}
-          );
-          setTypeInfo(typeInfoObj);
-        }
-
-        if (debTypeInfoJson) {
-          const parsed: DebTypeInfo[] = JSON.parse(debTypeInfoJson);
-          debTypeRegistry.set(parsed);
-        }
-
-        if (errors.length > 0) {
-          errors.forEach((err) => {
-            const errorType = err.isWarning ? "Warning" : "Error";
-            if (err.filename === "<string>") {
-              compilationOutputRef.current += `${errorType} at line ${err.lineNum}: ${err.msg}\n`;
-            } else {
-              compilationOutputRef.current += `${errorType} at ${
-                err.filename || "<unknown>"
-              }:${err.lineNum}: ${err.msg}\n`;
-            }
-          });
-        }
-
-        const hasErrors = errors.some((e) => !e.isWarning);
-        const hasWarnings = errors.some((e) => e.isWarning);
-
-        let newOutputClass: "warning" | "error" | "" = "";
-        if (hasErrors) {
-          newOutputClass = "error";
-        } else if (hasWarnings || hasOutputRef.current) {
-          newOutputClass = "warning";
-        }
-
-        setOutput(compilationOutputRef.current);
-        setOutputClass(newOutputClass);
+        setWorkerReady(true);
+        void performCheck(currentCodeRef.current, true);
       },
       (error) => {
-        compilationOutputRef.current += "Worker Error: " + error + "\n";
-        setOutput(compilationOutputRef.current);
+        setWorkerReady(false);
+        setWorkerError(true);
+        setOutput(error);
         setOutputClass("error");
-      }
+      },
     );
 
     workerRef.current = worker;
 
     return () => {
+      mountedRef.current = false;
+      if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      if (eventTimeoutRef.current) clearTimeout(eventTimeoutRef.current);
+      writeStorage(codeStorageKey, currentCodeRef.current);
       worker.terminate();
       abortRunRef.current?.();
     };
@@ -144,85 +162,37 @@ export default function App({
 
   useEffect(() => {
     const storageKey = `ebpf-party-layout`;
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      setSavedLayout(JSON.parse(saved));
-    }
+    setSavedLayout(readLayout(storageKey));
+    setLayoutReady(true);
 
     const compileSettingKey = `ebpf-party-compile-as-you-type`;
-    const savedCompileSetting = localStorage.getItem(compileSettingKey);
+    const savedCompileSetting = readStorage(compileSettingKey);
     if (savedCompileSetting !== null) {
       setCompileAsYouType(savedCompileSetting === "true");
     }
 
-    const savedVimMode = localStorage.getItem("ebpf-party-vim-mode");
+    const savedVimMode = readStorage("ebpf-party-vim-mode");
     if (savedVimMode !== null) {
       setVimMode(savedVimMode === "true");
     }
   }, []);
 
-  const performCheck = (code: string) => {
-    compilationOutputRef.current = "";
-    hasOutputRef.current = false;
-    workerRef.current?.checkSyntax(code, false);
-    lastCheckedCodeRef.current = code;
-  };
-
-  const compileCode = (
-    code: string,
-    generateTypeBindings: boolean
-  ): Promise<{ success: boolean; errors: any[] }> => {
-    return new Promise((resolve) => {
-      compilationOutputRef.current = "";
-      hasOutputRef.current = false;
-
-      const originalOnResult = workerRef.current?.onResult;
-
-      workerRef.current!.onResult = (
-        result,
-        typeInfoJson,
-        debTypeInfoJson,
-        timing,
-        errors
-      ) => {
-        if (originalOnResult) {
-          originalOnResult(
-            result,
-            typeInfoJson,
-            debTypeInfoJson,
-            timing,
-            errors
-          );
-        }
-
-        const hasErrors = errors.some((e) => !e.isWarning);
-        resolve({ success: !hasErrors, errors });
-
-        workerRef.current!.onResult = originalOnResult;
-      };
-
-      workerRef.current?.checkSyntax(code, generateTypeBindings);
-    });
-  };
-
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
     currentCodeRef.current = newCode;
-
-    if (!compileAsYouType) {
-      return;
-    }
-
-    if (!debounceTimeoutRef.current) {
-      performCheck(newCode);
-
-      debounceTimeoutRef.current = setTimeout(() => {
-        if (currentCodeRef.current !== lastCheckedCodeRef.current) {
-          performCheck(currentCodeRef.current);
-        }
-        debounceTimeoutRef.current = null;
-      }, DEBOUNCE_TIME_MS);
-    }
+    // Persist drafts, not just programs that have been run.
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(
+      () => writeStorage(codeStorageKey, newCode),
+      400,
+    );
+    ++checkVersionRef.current;
+    if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
+    if (!compileAsYouType || !workerReady || runningRef.current) return;
+    debounceTimeoutRef.current = setTimeout(() => {
+      debounceTimeoutRef.current = null;
+      void performCheck(currentCodeRef.current);
+    }, DEBOUNCE_TIME_MS);
   };
 
   const handleSelectStruct = (name: string) => {
@@ -231,207 +201,280 @@ export default function App({
     }
   };
 
+  const flushEvents = () => {
+    if (eventTimeoutRef.current) clearTimeout(eventTimeoutRef.current);
+    const batch = pendingEventsRef.current.splice(0);
+    if (mountedRef.current) {
+      if (batch.length) setEvents((previous) => [...previous, ...batch]);
+      setDroppedEvents(droppedEventCountRef.current);
+    }
+    eventTimeoutRef.current = null;
+  };
+
+  const clearEvents = () => {
+    if (eventTimeoutRef.current) clearTimeout(eventTimeoutRef.current);
+    eventTimeoutRef.current = null;
+    pendingEventsRef.current = [];
+    debugEventCountRef.current = 0;
+    droppedEventCountRef.current = 0;
+    setDroppedEvents(0);
+    setEvents([]);
+  };
+
   const handleRun = async () => {
-    if (isRunning) return;
-
-    localStorage.setItem(codeStorageKey, code);
-
-    const { success } = await compileCode(code, true);
-
-    if (!success) {
+    if (runningRef.current || !workerReady) return;
+    runningRef.current = true;
+    setIsRunning(true);
+    if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
+    abortRunRef.current?.();
+    const runSource = currentCodeRef.current;
+    writeStorage(codeStorageKey, runSource);
+    debTypeRegistry.set([]);
+    setTypeInfo({});
+    setSelectedStructName(null);
+    clearEvents();
+    const result = await performCheck(runSource, true);
+    if (!mountedRef.current) return;
+    if (
+      !result ||
+      result.result !== 0 ||
+      result.errors.some((e) => !e.isWarning)
+    ) {
+      runningRef.current = false;
       setIsRunning(false);
       return;
     }
-    setIsRunning(true);
-
-    setEvents([]);
-
+    // The editor may have changed during compilation, but events still need
+    // bindings for the exact source sent to the backend.
+    displayResult(result);
+    const finish = () => {
+      flushEvents();
+      runningRef.current = false;
+      if (mountedRef.current) setIsRunning(false);
+      abortRunRef.current = null;
+    };
     const abort = runCode(
-      code,
+      runSource,
       exerciseId,
-      (event) => setEvents((prev) => [...prev, event]),
+      (event) => {
+        if (event.type === "correctAnswer")
+          writeStorage(`exercise-completed-${exerciseId}`, "true");
+        if (event.type === "guestMessage" && event.data.type === "event") {
+          if (++debugEventCountRef.current > 1000) {
+            ++droppedEventCountRef.current;
+            if (!eventTimeoutRef.current)
+              eventTimeoutRef.current = setTimeout(flushEvents, 50);
+            return;
+          }
+        }
+        pendingEventsRef.current.push(event);
+        if (!eventTimeoutRef.current)
+          eventTimeoutRef.current = setTimeout(flushEvents, 50);
+      },
       (error) => {
         console.error("Run error:", error);
-        setIsRunning(false);
+        finish();
       },
-      () => setIsRunning(false)
+      finish,
     );
 
     abortRunRef.current = abort;
   };
 
   const handleDelete = () => {
-    localStorage.removeItem(codeStorageKey);
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
+    removeStorage(codeStorageKey);
     setCode(starterCode);
     currentCodeRef.current = starterCode;
-    lastCheckedCodeRef.current = starterCode;
-    performCheck(starterCode);
+    clearEvents();
+    void performCheck(starterCode, true);
   };
 
-  const canRun = !isRunning;
+  const canRun = workerReady && !isRunning;
 
   const storageKey = `ebpf-party-layout`;
 
   const handleLayoutChange = (layout: { [key: string]: number }) => {
-    localStorage.setItem(storageKey, JSON.stringify(layout));
+    writeStorage(storageKey, JSON.stringify(layout));
   };
 
   const handleCompileAsYouTypeChange = (checked: boolean) => {
     setCompileAsYouType(checked);
-    localStorage.setItem("ebpf-party-compile-as-you-type", String(checked));
+    writeStorage("ebpf-party-compile-as-you-type", String(checked));
 
-    if (checked && currentCodeRef.current !== lastCheckedCodeRef.current) {
-      performCheck(currentCodeRef.current);
+    if (!checked && debounceTimeoutRef.current)
+      clearTimeout(debounceTimeoutRef.current);
+    if (checked && workerReady && !runningRef.current) {
+      void performCheck(currentCodeRef.current);
     }
   };
 
   useEffect(() => {
-    const hasCorrectAnswer = events.some((e) => e.type === "correctAnswer");
-    if (hasCorrectAnswer) {
-      localStorage.setItem(`exercise-completed-${exerciseId}`, "true");
-    }
-  }, [events, exerciseId]);
+    if (
+      showResetConfirm &&
+      resetDialogRef.current &&
+      !resetDialogRef.current.open
+    )
+      resetDialogRef.current.showModal();
+  }, [showResetConfirm]);
 
   return (
     <div className={styles.app}>
-      <Group
-        orientation="vertical"
-        id={storageKey}
-        defaultLayout={savedLayout}
-        onLayoutChange={handleLayoutChange}
-        style={{ height: "100%" }}
-      >
-        <Panel id="editor-panel" defaultSize="80%" minSize="33%" maxSize="80%">
-          <div className={styles.editorPanel}>
-            <div className={styles.runButtonHeader}>
-              <div className={styles.controlsGroup}>
-                <ControlButton
-                  pressed={compileAsYouType}
-                  onClick={() =>
-                    handleCompileAsYouTypeChange(!compileAsYouType)
-                  }
-                  title="Type-check as you type"
-                >
-                  <Braces size={18} />
-                </ControlButton>
-                <ControlButton
-                  pressed={vimMode}
-                  onClick={() => {
-                    const newValue = !vimMode;
-                    setVimMode(newValue);
-                    localStorage.setItem(
-                      "ebpf-party-vim-mode",
-                      String(newValue)
-                    );
-                  }}
-                  title="Vim mode"
-                >
-                  <Keyboard size={18} />
-                </ControlButton>
-                <ControlButton
-                  onClick={() => setShowResetConfirm(true)}
-                  title="Reset code to defaults"
-                >
-                  <RotateCcw size={18} />
-                </ControlButton>
-              </div>
-              <RunButton
-                disabled={!canRun}
-                isRunning={isRunning}
-                onRun={handleRun}
-              />
-            </div>
-            <div className={styles.editorWrapper}>
-              <noscript>
-                <div className="noscript-content">
-                  <p>
-                    The interactive code editor requires JavaScript to function.
-                  </p>
-                  <p>You can use your own editor locally if you prefer.</p>
-                  {codeFile && chapterId !== undefined && (
-                    <p>
-                      Source file:{" "}
-                      <a href={`/exercises-code/${chapterId}/${codeFile}`}>
-                        {codeFile}
-                      </a>
-                    </p>
-                  )}
-                  <p>The API is:</p>
-                  <pre>
-                    {`POST /run_code/${exerciseId}
-  - Body: your code`}
-                  </pre>
+      {layoutReady && (
+        <Group
+          orientation="vertical"
+          id={storageKey}
+          defaultLayout={savedLayout}
+          onLayoutChange={handleLayoutChange}
+          style={{ height: "100%" }}
+        >
+          <Panel
+            id="editor-panel"
+            defaultSize="80%"
+            minSize="33%"
+            maxSize="80%"
+          >
+            <div className={styles.editorPanel}>
+              <div className={styles.runButtonHeader}>
+                <div className={styles.controlsGroup}>
+                  <ControlButton
+                    pressed={compileAsYouType}
+                    onClick={() =>
+                      handleCompileAsYouTypeChange(!compileAsYouType)
+                    }
+                    title="بررسی کد هنگام تایپ"
+                  >
+                    <Braces size={18} />
+                  </ControlButton>
+                  <ControlButton
+                    pressed={vimMode}
+                    onClick={() => {
+                      const newValue = !vimMode;
+                      setVimMode(newValue);
+                      writeStorage("ebpf-party-vim-mode", String(newValue));
+                    }}
+                    title="حالت Vim"
+                  >
+                    <Keyboard size={18} />
+                  </ControlButton>
+                  <ControlButton
+                    onClick={() => setShowResetConfirm(true)}
+                    title="بازگرداندن کد اولیه"
+                    disabled={isRunning || !workerReady}
+                  >
+                    <RotateCcw size={18} />
+                  </ControlButton>
                 </div>
-              </noscript>
-              <CodeEditor
-                code={code}
-                onChange={handleCodeChange}
-                onRun={handleRun}
-                canRun={canRun}
-                onSelectStruct={handleSelectStruct}
-                vimMode={vimMode}
+                <RunButton
+                  disabled={!canRun}
+                  isRunning={isRunning}
+                  onRun={handleRun}
+                />
+              </div>
+              {!workerReady && (
+                <p className={styles.workerStatus} role="status">
+                  {workerError
+                    ? "بارگذاری کامپایلر ناموفق بود. صفحه را دوباره بارگذاری کنید."
+                    : "در حال آماده‌سازی کامپایلر…"}
+                </p>
+              )}
+              <div className={styles.editorWrapper}>
+                <noscript>
+                  <div className="noscript-content">
+                    <p>ویرایشگر تعاملی به JavaScript نیاز دارد.</p>
+                    <p>می‌توانید از ویرایشگر محلی خود استفاده کنید.</p>
+                    {codeFile && chapterId !== undefined && (
+                      <p>
+                        فایل کد:{" "}
+                        <a href={`/exercises-code/${chapterId}/${codeFile}`}>
+                          {codeFile}
+                        </a>
+                      </p>
+                    )}
+                    <p>رابط API:</p>
+                    <pre>
+                      {`POST /run_code/${exerciseId}
+  - Body: your code`}
+                    </pre>
+                  </div>
+                </noscript>
+                <CodeEditor
+                  code={code}
+                  onChange={handleCodeChange}
+                  onRun={handleRun}
+                  canRun={canRun}
+                  onSelectStruct={handleSelectStruct}
+                  vimMode={vimMode}
+                />
+              </div>
+              {outputClass && (
+                <CompilerOutput output={output} outputClass={outputClass} />
+              )}
+              {Object.keys(typeInfo).length > 0 && selectedStructName && (
+                <>
+                  {selectedStructName && (
+                    <StructViewer
+                      typeInfo={typeInfo[selectedStructName]}
+                      onClose={() => setSelectedStructName(null)}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+          </Panel>
+
+          <Separator className={styles.resizeHandle} />
+
+          <Panel id="events-panel" defaultSize="20%" minSize="20%">
+            {events.length > 0 ? (
+              <EventViewer
+                events={events}
+                isRunning={isRunning}
+                onClear={clearEvents}
+                typeRegistry={typeInfo}
+                droppedEvents={droppedEvents}
               />
-            </div>
-            {outputClass && (
-              <CompilerOutput output={output} outputClass={outputClass} />
+            ) : (
+              <div className={styles.emptyEventsPane}>
+                {isRunning
+                  ? "در حال اجرای کد…"
+                  : "کد را اجرا کنید تا رویدادها در این بخش نمایش داده شوند"}
+              </div>
             )}
-            {Object.keys(typeInfo).length > 0 && selectedStructName && (
-              <>
-                {selectedStructName && (
-                  <StructViewer
-                    typeInfo={typeInfo[selectedStructName]}
-                    onClose={() => setSelectedStructName(null)}
-                  />
-                )}
-              </>
-            )}
-          </div>
-        </Panel>
-
-        <Separator className={styles.resizeHandle} />
-
-        <Panel id="events-panel" defaultSize="20%" minSize="20%">
-          {events.length > 0 ? (
-            <EventViewer
-              events={events}
-              isRunning={isRunning}
-              onClear={() => setEvents([])}
-              typeRegistry={typeInfo}
-            />
-          ) : (
-            <div className={styles.emptyEventsPane}>
-              Run your code to see execution events here
-            </div>
-          )}
-        </Panel>
-      </Group>
+          </Panel>
+        </Group>
+      )}
       {showResetConfirm && (
-        <div className={styles.confirmDialog}>
-          <div className={styles.confirmDialogContent}>
-            <h3>Reset Code to Defaults?</h3>
-            <p>
-              This will clear your changes and restore the original starter
-              code.
-            </p>
-            <div className={styles.confirmButtons}>
-              <button
-                className={styles.cancelButton}
-                onClick={() => setShowResetConfirm(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className={styles.confirmButton}
-                onClick={() => {
-                  handleDelete();
-                  setShowResetConfirm(false);
-                }}
-              >
-                Reset
-              </button>
-            </div>
+        <dialog
+          ref={resetDialogRef}
+          className={styles.confirmDialogContent}
+          aria-labelledby="reset-title"
+          aria-describedby="reset-description"
+          onClose={() => setShowResetConfirm(false)}
+        >
+          <h3 id="reset-title">بازگرداندن کد اولیه؟</h3>
+          <p id="reset-description">
+            تغییرات شما پاک می‌شوند و کد اولیهٔ تمرین جایگزین خواهد شد.
+          </p>
+          <div className={styles.confirmButtons}>
+            <button
+              className={styles.cancelButton}
+              onClick={() => setShowResetConfirm(false)}
+            >
+              انصراف
+            </button>
+            <button
+              className={styles.confirmButton}
+              onClick={() => {
+                handleDelete();
+                setShowResetConfirm(false);
+              }}
+            >
+              بازگرداندن
+            </button>
           </div>
-        </div>
+        </dialog>
       )}
     </div>
   );

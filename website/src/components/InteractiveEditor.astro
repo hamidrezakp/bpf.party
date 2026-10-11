@@ -20,12 +20,20 @@ if (!starterCode) {
     codeFile={codeFile}
   />
 </div>
+<noscript>
+  <p>
+    <span>ویرایشگر تعاملی به JavaScript نیاز دارد.</span>
+    <a href={`/exercises-code/${chapterId}/${codeFile}`}>دریافت کد اولیه</a>
+  </p>
+</noscript>
 
 <style>
   .interactive-editor {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 400px;
+    min-height: 0;
+    height: 100%;
+    min-width: 0;
   }
 </style>

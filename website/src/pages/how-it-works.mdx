@@ -5,25 +5,24 @@ title: این پلتفرم چگونه کار می‌کند
 
 هنگام نوشتن کد، [TCC (Tiny C Compiler)](https://bellard.org/tcc/) در مرورگر شما از طریق WASM اجرا می‌شود تا typechecking فوری بدون roundtrip سرور فراهم شود.
 
-وقتی روی `Run` کلیک می‌کنید، کد شما در local storage ذخیره و به بک‌اند ارسال می‌شود.
+وقتی روی «اجرا» کلیک می‌کنید، کد شما در local storage ذخیره و به بک‌اند ارسال می‌شود.
 
 بک‌اند کد شما را با `clang` به یک شیء BPF کامپایل می‌کند و یک VM تازه برای اجرای آن بالا می‌آورد..
 
-
-## The VM
+## ماشین مجازی
 
 هر ارسال یک VM موقت با موارد زیر دریافت می‌کند:
 
-  - 0.5vCPU, 64MB RAM
-  - Kernel 6.18.2 (latest LTS)
-  - No network
-  - A 500ms self-destruct timer
+- نیم vCPU و ۶۴ مگابایت RAM
+- هستهٔ Linux 6.18.2
+- بدون دسترسی به شبکهٔ خارجی
+- توقف خودکار پس از ۵۰۰ میلی‌ثانیه
 
 زمان بوت ۴۰~۵۰ms است به لطف [Firecracker](https://github.com/firecracker-microvm/firecracker) (با چند patch عجیب!) و یک کرنل بسیار minimal.
 
 VM با یک [process سفارشی `/init`](https://github.com/DavidVentura/ebpf.party/blob/master/userspace/src/main.rs) بوت می‌شود که حداقل راه‌اندازی را انجام می‌دهد (mount کردن `/sys`، راه‌اندازی loopback و ...)، شیء BPF شما را load می‌کند و eventها را stream می‌کند.
 
-## Getting events out of the vm
+## دریافت رویدادها از ماشین مجازی
 
 کد شما باید [`ep_platform.h`](https://github.com/DavidVentura/ebpf.party/blob/master/backend/includes/ep_platform.h) را `#include` کند که یک map از نوع BPF ringbuf برای همه خروجی‌ها ایجاد می‌کند.
 

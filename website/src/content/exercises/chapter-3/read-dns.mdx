@@ -1,6 +1,6 @@
 We've read file contents from syscall buffers. Now let's read network data - specifically DNS responses to extract IP addresses.
 
-## The recvfrom syscall
+## فراخوانی سیستمی recvfrom
 
 DNS clients use `recvfrom()` to receive UDP responses:
 
@@ -13,7 +13,7 @@ Like `read()`, we need entry/exit correlation:
 - At **entry**: Buffer is empty, but we have the pointer at `ctx->args[1]`
 - At **exit**: Buffer is filled with DNS response, `ctx->ret` = bytes received
 
-## DNS packet structure
+## ساختار بستهٔ DNS
 
 ```c
 struct dns_header {
@@ -28,7 +28,7 @@ struct dns_header {
 
 After the header: **Question section** (domain name) → **Answer section** (IP address).
 
-### Domain name encoding
+### رمزگذاری نام دامنه
 
 DNS encodes domains as length-prefixed labels: `\x04ebpf\x05party\x00` for "ebpf.party".
 
@@ -53,7 +53,7 @@ for (int i = 0; i < 10; i++) {  // Max 10 labels
 }
 ```
 
-### Answer section structure
+### ساختار بخش پاسخ
 
 After question (domain + QTYPE + QCLASS), the answer contains:
 
@@ -68,7 +68,7 @@ After question (domain + QTYPE + QCLASS), the answer contains:
 
 For A records, RDATA is the IPv4 address in network byte order.
 
-## The challenge
+## صورت تمرین
 
 A program makes DNS queries. Find the response for "ebpf.party" and submit its IP address.
 

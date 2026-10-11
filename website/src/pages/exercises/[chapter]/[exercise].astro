@@ -43,7 +43,7 @@ if (hasCode) {
     process.cwd(),
     "public/exercises-code",
     chapterData.number.toString(),
-    exerciseData.codeFile
+    exerciseData.codeFile!,
   );
   starterCode = await readFile(codeFilePath, "utf-8");
 }

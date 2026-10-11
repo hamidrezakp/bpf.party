@@ -1,4 +1,6 @@
 .container {
+  direction: ltr;
+  unicode-bidi: isolate;
   background: #f3f4f6;
   padding: 1rem;
   border-radius: 0.5rem;

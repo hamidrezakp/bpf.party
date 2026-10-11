@@ -11,7 +11,13 @@ export default function CompilerOutput({
   outputClass,
 }: CompilerOutputProps) {
   return (
-    <div className={clsx(styles.output, styles[outputClass])}>
+    <div
+      dir="ltr"
+      lang="en"
+      role="status"
+      aria-label="خروجی کامپایلر"
+      className={clsx(styles.output, styles[outputClass])}
+    >
       {output}
     </div>
   );

@@ -5,6 +5,13 @@ firecracker
 firecracker-spawn
 website/node_modules
 website/dist
+website/.astro
+website/src/wasm/syntax_check.*
+website/public/tcc/syntax_check.*
+**/.env
+**/.env.*
+**/npm-debug.log*
+**/pnpm-debug.log*
 **/target
 rootfs
 rootfs.ext4

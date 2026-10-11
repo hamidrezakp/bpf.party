@@ -16,9 +16,10 @@ export default function StructSelector({
 
   return (
     <div className={styles.structSelector}>
-      <label htmlFor="struct-select">Select struct to view:</label>
+      <label htmlFor="struct-select">انتخاب ساختار:</label>
       <select
         id="struct-select"
+        dir="ltr"
         value={selectedName}
         onChange={(e) => onSelect(e.target.value)}
       >

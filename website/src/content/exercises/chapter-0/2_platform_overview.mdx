@@ -4,18 +4,18 @@ import Keyboard from "lucide-react/dist/esm/icons/keyboard";
 
 این پلتفرم یک محیط پیکربندی‌شده و تمرین‌هایی برای یادگیری eBPF فراهم می‌کند.
 
-ویرایشگر کد شما را به‌صورت محلی هم‌زمان با تایپ کامپایل می‌کند، اما می‌توانید با کلیک روی دکمه <ControlButton style={{display: "inline"}}><Braces size={14} /></ControlButton> این قابلیت را غیرفعال کنید. خطاهای کامپایل به‌صورت inline مشخص می‌شوند.
+ویرایشگر کد شما را به‌صورت محلی هم‌زمان با تایپ کامپایل می‌کند، اما می‌توانید با کلیک روی دکمه <ControlButton title="بررسی کد هنگام تایپ" style={{display: "inline"}}><Braces size={14} /></ControlButton> این قابلیت را غیرفعال کنید. خطاهای کامپایل در بخش خروجی نمایش داده می‌شوند.
 
-در ویرایشگر تایپ کنید و ببینید چگونه واکنش نشان می‌دهد، سپس روی «Run» کلیک کنید تا کدتان روی سرور اجرا شود.
+در ویرایشگر تایپ کنید و ببینید چگونه واکنش نشان می‌دهد، سپس روی «اجرا» کلیک کنید تا کدتان روی سرور اجرا شود.
 
-اگر «vim mode» را ترجیح می‌دهید، دکمه <ControlButton style={{display: "inline"}}><Keyboard size={14} /></ControlButton> آن را toggle می‌کند.
+اگر حالت Vim را ترجیح می‌دهید، دکمه <ControlButton title="حالت Vim" style={{display: "inline"}}><Keyboard size={14} /></ControlButton> آن را فعال یا غیرفعال می‌کند.
 
-## Hotkeys
+## میانبرهای صفحه‌کلید
 
-- <kbd>Ctrl</kbd>+<kbd>Enter</kbd> کد را اجرا می‌کند.
-- <kbd>Ctrl</kbd>+<kbd>Click</kbd> روی تعریف نوع‌ها (`my_struct`, `trace_event_raw_sched_process_exec`) پنجره تعریف نوع را نشان می‌دهد
+- <span dir="ltr"><kbd>Ctrl</kbd>+<kbd>Enter</kbd></span> کد را اجرا می‌کند.
+- <span dir="ltr"><kbd>Ctrl</kbd>+<kbd>Click</kbd></span> روی تعریف نوع‌ها (`my_struct`, `trace_event_raw_sched_process_exec`) پنجره تعریف نوع را نشان می‌دهد
 
-## Debugging utilities
+## ابزارهای اشکال‌زدایی
 
 چندین ماکرو `DEBUG_` برای نمایش داده از برنامه‌های شما وجود دارد.
 هر ماکرو آرگومان اول خود را به‌صورت یک label (ثابت رشته‌ای) می‌گیرد.
@@ -25,7 +25,7 @@ import Keyboard from "lucide-react/dist/esm/icons/keyboard";
 - `DEBUG_STR_LEN(label, ptr, len)` هر pointer را می‌پذیرد و `len` بایت را debug می‌کند
 - `DEBUG_STRUCT(label, struct)` هر struct را _به‌صورت مقدار_ می‌پذیرد
 
-## Submitting answers
+## ارسال پاسخ‌ها
 
 برای حل تمرین‌ها باید پاسخ‌ها را مستقیماً از کد خود با `SUBMIT_NUM(answer)`، `SUBMIT_STR(answer)` یا `SUBMIT_STR_LEN(answer, len)` ارسال کنید.
 

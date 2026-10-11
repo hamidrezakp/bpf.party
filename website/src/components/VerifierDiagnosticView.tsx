@@ -15,17 +15,19 @@ export default function VerifierDiagnosticView({
         <button
           className={!showRaw ? styles.tabActive : styles.tab}
           onClick={() => setShowRaw(false)}
+          aria-pressed={!showRaw}
         >
-          Diagnostic
+          گزارش خطا
         </button>
         <button
           className={showRaw ? styles.tabActive : styles.tab}
           onClick={() => setShowRaw(true)}
+          aria-pressed={showRaw}
         >
-          Raw verifier log
+          خروجی خام verifier
         </button>
       </div>
-      <pre className={styles.diagnosticBody}>
+      <pre dir="ltr" lang="en" className={styles.diagnosticBody}>
         {showRaw ? data.raw : data.rendered}
       </pre>
     </div>

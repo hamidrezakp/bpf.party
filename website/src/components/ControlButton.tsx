@@ -10,12 +10,15 @@ interface ControlButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export default function ControlButton({
   children,
   onClick,
-  pressed = false,
+  pressed,
   className,
   ...props
 }: ControlButtonProps) {
   return (
     <button
+      type="button"
+      aria-label={props.title}
+      aria-pressed={pressed}
       className={`${styles.controlButton} ${pressed ? styles.pressed : ""} ${className || ""}`}
       onClick={onClick}
       {...props}

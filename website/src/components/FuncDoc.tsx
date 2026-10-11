@@ -11,7 +11,10 @@ export default function FuncDoc({ doc }: FuncDocProps) {
       <summary>{doc.description}</summary>
       <div className={styles.function}>
         تابع
-        <span className={styles.signature}> {doc.function_name} </span>
+        <bdi dir="ltr" className={styles.signature}>
+          {" "}
+          {doc.function_name}{" "}
+        </bdi>
         <a
           className={styles.docsLink}
           href={doc.docsUrl}
@@ -37,10 +40,14 @@ export default function FuncDoc({ doc }: FuncDocProps) {
         </dl>
         {doc.returns && (
           <>
-            {doc.returns.description.success ? (
+            {typeof doc.returns.description === "object" ? (
               <>
-                <div>در صورت موفقیت، {doc.returns.description.success} برمی‌گرداند</div>
-                <div>در صورت خطا، {doc.returns.description.error} برمی‌گرداند</div>
+                <div>
+                  در صورت موفقیت، {doc.returns.description.success} برمی‌گرداند
+                </div>
+                <div>
+                  در صورت خطا، {doc.returns.description.error} برمی‌گرداند
+                </div>
               </>
             ) : (
               <>مقدار بازگشتی: {doc.returns.description}</>

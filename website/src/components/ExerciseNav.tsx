@@ -1,8 +1,7 @@
-import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left";
-import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import styles from "./ExerciseNav.module.css";
 
-interface Exercise {
+export interface Exercise {
   url?: string;
   incomplete?: boolean;
   frontmatter: {
@@ -20,14 +19,14 @@ export default function ExerciseNav({
   nextExercise,
 }: ExerciseNavProps) {
   return (
-    <nav className={styles.exerciseNav}>
+    <nav className={styles.exerciseNav} aria-label="تمرین قبلی و بعدی">
       {prevExercise && (
         <a
           href={prevExercise.url}
           className={`${styles.navLink} ${styles.prev}`}
         >
           <span className={styles.navArrow}>
-            <ChevronLeft />
+            <ChevronRight aria-hidden="true" />
           </span>
           <div className={styles.navText}>
             <div className={styles.navLabel}>قبلی</div>
@@ -49,7 +48,7 @@ export default function ExerciseNav({
             </div>
           </div>
           <span className={styles.navArrow}>
-            <ChevronRight />
+            <ChevronLeft aria-hidden="true" />
           </span>
         </a>
       )}

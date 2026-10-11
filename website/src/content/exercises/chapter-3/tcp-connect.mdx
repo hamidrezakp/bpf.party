@@ -1,7 +1,7 @@
 
 از tracepointها برای hook زدن به syscallها استفاده کردیم. حالا بیایید **kprobe**ها را یاد بگیریم — اتصال به توابع داخلی کرنل.
 
-## Kprobes vs tracepoints
+## مقایسهٔ Kprobe و tracepoint
 
 **Tracepoint**ها hookهای پایدار و مستند در رویدادهای مشخص کرنل هستند (ورود/خروج syscall، زمان‌بندی و غیره). زمینه‌ای ساختاریافته ارائه می‌دهند:
 ```c
@@ -15,11 +15,11 @@ int trace(struct trace_event_raw_sys_enter *ctx) {
 
 این مکانیزم انعطاف‌پذیرتر است، اما kprobeها بخشی از API پایدار کرنل نیستند و می‌توانند بین نسخه‌های کرنل تغییر کنند. علاوه بر این، 'context' تعریف‌شده‌ای ارائه نمی‌دهند؛ باید نوع و ترتیب آرگومان‌ها را از سورس کرنل پیدا کنیم.
 
-## Why kprobes?
+## چرا Kprobe؟
 
 Tracepointها رویدادهای مشخص را در معرض قرار می‌دهند. Kprobeها به ما اجازه می‌دهند عمیق‌تر به درون کرنل hook بزنیم. مثلاً syscall `connect()` برای سوکت‌های non-blocking بلافاصله برمی‌گردد، اما `tcp_finish_connect()` زمانی فراخوانی می‌شود که دست‌دهی TCP واقعاً کامل شود.
 
-## Accessing function arguments
+## دسترسی به آرگومان‌های تابع
 
 Kprobeها `struct pt_regs *ctx` دریافت می‌کنند — رجیسترهای خام CPU. از ماکروها برای استخراج آرگومان‌ها استفاده کنید:
 
@@ -40,11 +40,11 @@ void tcp_finish_connect(struct sock *sk, struct sk_buff *skb);
 struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
 ```
 
-## The challenge
+## صورت تمرین
 
 برنامه‌ای به سرور راه‌دور وصل می‌شود. syscall `connect()` مقدار `-EINPROGRESS` (non-blocking) برمی‌گرداند، اما اتصال با موفقیت کامل می‌شود.
 
-### Socket properties
+### ویژگی‌های socket
 
 می‌توانید ویژگی‌های سوکت را با `bpf_probe_read_kernel` بخوانید. فیلدهای مرتبط:
 
@@ -64,7 +64,7 @@ struct sock_common {
 به یاد داشته باشید پورت‌ها big endian هستند، پس باید از `bpf_ntohs` برای تبدیل استفاده کنید.
 
 
-### Your task
+### کاری که باید انجام دهید
 
 پورت مقصد را ارسال کنید.
 

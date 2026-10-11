@@ -1,5 +1,4 @@
-import Loader from "lucide-react/dist/esm/icons/loader";
-import Play from "lucide-react/dist/esm/icons/play";
+import { Loader, Play } from "lucide-react";
 import styles from "./RunButton.module.css";
 
 interface RunButtonProps {
@@ -18,13 +17,14 @@ export default function RunButton({
       className={styles.runButton}
       onClick={onRun}
       disabled={disabled || isRunning}
+      aria-label={isRunning ? "در حال اجرا" : "اجرای کد"}
     >
       {isRunning ? (
         <Loader size={16} />
       ) : (
         <>
           <Play size={16} />
-          Run
+          اجرا
         </>
       )}
     </button>

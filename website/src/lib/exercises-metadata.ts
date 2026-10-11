@@ -141,7 +141,7 @@ export function getChapterBySlug(slug: string): ChapterMetadata | undefined {
 
 export function getExerciseByParams(
   chapterSlug: string,
-  exerciseSlug: string
+  exerciseSlug: string,
 ): { chapter: ChapterMetadata; exercise: ExerciseMetadata } | undefined {
   const chapter = getChapterBySlug(chapterSlug);
   if (!chapter) return undefined;
@@ -163,17 +163,17 @@ export function getAllExercisesFlat(): Array<FullExMeta> {
       chapter,
       exercise,
       url: `/exercises/${chapter.slug}/${exercise.slug}/`,
-    }))
+    })),
   );
 }
 
 export function getNavigationContext(
   chapterSlug: string,
-  exerciseSlug: string
+  exerciseSlug: string,
 ) {
   const allExercises = getAllExercisesFlat();
   const currentIndex = allExercises.findIndex(
-    (e) => e.chapter.slug === chapterSlug && e.exercise.slug === exerciseSlug
+    (e) => e.chapter.slug === chapterSlug && e.exercise.slug === exerciseSlug,
   );
 
   if (currentIndex === -1) return null;

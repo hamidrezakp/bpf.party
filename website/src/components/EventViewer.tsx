@@ -3,13 +3,14 @@ import type { TypeInfo } from "../types/typeinfo";
 import ParsedEventViewer from "./ParsedEventViewer";
 import VerifierDiagnosticView from "./VerifierDiagnosticView";
 import styles from "./EventViewer.module.css";
-import X from "lucide-react/dist/esm/icons/x";
+import { X } from "lucide-react";
 
 interface EventViewerProps {
   events: SSEEvent[];
   isRunning: boolean;
   onClear: () => void;
   typeRegistry: { [name: string]: TypeInfo };
+  droppedEvents?: number;
 }
 
 export default function EventViewer({
@@ -17,9 +18,10 @@ export default function EventViewer({
   isRunning,
   onClear,
   typeRegistry,
+  droppedEvents = 0,
 }: EventViewerProps) {
   const getEventStyle = (
-    event: SSEEvent
+    event: SSEEvent,
   ): "error" | "success" | "warning" | "normal" => {
     if (event.type === "compileError") return "error";
     if (event.type === "requestError") return "error";
@@ -42,41 +44,46 @@ export default function EventViewer({
       return event.data;
     }
     if (event.type === "requestError") {
-      return `Request Error: ${event.data}`;
+      return `خطای درخواست: \u2066${event.data}\u2069`;
     }
     if (event.type === "correctAnswer") {
-      return "Correct Answer!";
+      return "پاسخ درست است!";
     }
     if (event.type === "wrongAnswer") {
-      return "Wrong Answer";
+      return "پاسخ نادرست است";
     }
     if (event.type === "multipleAnswers") {
-      return "Multiple Answers Detected";
+      return "بیش از یک پاسخ ارسال شده است";
     }
     if (event.type === "noAnswer") {
-      return "You didn't submit an answer. Use SUBMIT_STR or SUBMIT_NUM to do it.";
+      return "پاسخی ارسال نکردید. از SUBMIT_STR یا SUBMIT_NUM استفاده کنید.";
     }
     if (event.type === "guestMessage") {
       if (event.data.type === "debugMapNotFound") {
-        return "Error: No perf maps found in program";
+        return "خطا: هیچ perf map در برنامه پیدا نشد";
       }
       if (event.data.type === "noProgramsFound") {
-        return "Error: No eBPF programs found in code. Missing a SEC() decorator?";
+        return "خطا: هیچ برنامهٔ eBPF پیدا نشد. SEC() را بررسی کنید.";
       }
       if (event.data.type === "cantAttachProgram") {
         const { section, kind } = event.data.data;
         if (kind === "noSuchHook") {
-          return `Could not attach to \`${section}\`, check the hook name for a typo.`;
+          return `اتصال به \u2066${section}\u2069 ناموفق بود. نام hook را بررسی کنید.`;
         }
         if (kind === "denied") {
-          return `The kernel rejected the program for hook \`${section}\`. Usually this is an over-read of ctx.`;
+          return `هسته برنامه را برای \u2066${section}\u2069 رد کرد. معمولاً دلیل آن خواندن خارج از محدودهٔ ctx است.`;
         }
-        return `Could not attach to \`${section}\`.`;
+        return `اتصال به \u2066${section}\u2069 ناموفق بود.`;
       }
       if (event.data.type === "verifierFail") {
         return event.data.data;
       }
-      return `${event.data.type}: ${JSON.stringify(event.data.data)}`;
+      if (event.data.type === "crashed") return "ماشین مجازی متوقف شد";
+      if (event.data.type === "foundMap")
+        return `map پیدا شد: \u2066${event.data.data.name}\u2069`;
+      return "data" in event.data
+        ? `${event.data.type}: ${JSON.stringify(event.data.data)}`
+        : event.data.type;
     }
     return event.type;
   };
@@ -93,29 +100,41 @@ export default function EventViewer({
     <div className={styles.eventViewer}>
       <div className={styles.header}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <h3>Execution Events</h3>
-          {isRunning && <span className={styles.loading}>Loading...</span>}
+          <h3>رویدادهای اجرا</h3>
+          {isRunning && <span className={styles.loading}>در حال دریافت…</span>}
         </div>
-        <button className={styles.closeButton} onClick={onClear}>
-          <X></X>
+        <button
+          className={styles.closeButton}
+          onClick={onClear}
+          aria-label="پاک کردن رویدادها"
+          title="پاک کردن رویدادها"
+        >
+          <X aria-hidden="true"></X>
         </button>
       </div>
-      <div className={styles.events}>
+      <div className={styles.events} aria-live="polite">
+        {droppedEvents > 0 && (
+          <p className={styles.warningEvent}>
+            تعداد {droppedEvents.toLocaleString("fa-IR")} رویداد پرحجم نمایش
+            داده نشد.
+          </p>
+        )}
         {events
           .filter(
-            (event) => ["compiling", "booting", "stack"].indexOf(event.type) < 0
+            (event) =>
+              ["compiling", "booting", "stack"].indexOf(event.type) < 0,
           )
           .filter(
             (event) =>
               event.type !== "guestMessage" ||
               ["booted", "foundProgram", "finished"].indexOf(event.data.type) ==
-                -1
+                -1,
           )
           .filter(
             (event) =>
               !hasDiagnostic ||
               event.type !== "guestMessage" ||
-              event.data.type !== "verifierFail"
+              event.data.type !== "verifierFail",
           )
           .filter((event) => !(hasError && event.type === "noAnswer"))
           .map((event, i) => {
@@ -137,13 +156,23 @@ export default function EventViewer({
               eventStyle === "error"
                 ? styles.errorEvent
                 : eventStyle === "success"
-                ? styles.successEvent
-                : eventStyle === "warning"
-                ? styles.warningEvent
-                : styles.event;
+                  ? styles.successEvent
+                  : eventStyle === "warning"
+                    ? styles.warningEvent
+                    : styles.event;
 
             return (
-              <p key={i} className={className}>
+              <p
+                key={i}
+                dir={
+                  event.type === "compileError" ||
+                  (event.type === "guestMessage" &&
+                    event.data.type === "verifierFail")
+                    ? "ltr"
+                    : "rtl"
+                }
+                className={className}
+              >
                 {formatEvent(event)}
               </p>
             );

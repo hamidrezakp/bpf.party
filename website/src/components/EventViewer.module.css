@@ -6,6 +6,7 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  direction: rtl;
 }
 
 .header {
@@ -17,7 +18,7 @@
 
 .eventViewer h3 {
   color: #d4d4d4;
-  font-family: monospace;
+  font-family: inherit;
   font-size: 14px;
   margin: 0;
   font-weight: bold;
@@ -36,7 +37,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .closeButton:hover {
@@ -55,55 +58,59 @@
 
 .event {
   color: #d4d4d4;
-  font-family: monospace;
+  font-family: inherit;
   font-size: 12px;
   margin: 0;
   padding: 0.5rem;
   background: var(--color-bg-primary);
-  border-left: 2px solid #4caf50;
+  border-inline-start: 2px solid #4caf50;
   border-radius: 2px;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .errorEvent {
   color: #ffcccc;
-  font-family: monospace;
+  font-family: inherit;
   font-size: 12px;
   margin: 0;
   padding: 0.5rem;
   background: #2e1e1e;
-  border-left: 2px solid #f44336;
+  border-inline-start: 2px solid #f44336;
   border-radius: 2px;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .successEvent {
   color: #b5f5b5;
-  font-family: monospace;
+  font-family: inherit;
   font-size: 12px;
   margin: 0;
   padding: 0.5rem;
   background: #1e2e1e;
-  border-left: 2px solid #66bb6a;
+  border-inline-start: 2px solid #66bb6a;
   border-radius: 2px;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .warningEvent {
   color: #ffd699;
-  font-family: monospace;
+  font-family: inherit;
   font-size: 12px;
   margin: 0;
   padding: 0.5rem;
   background: #2e2a1e;
-  border-left: 2px solid #ff9800;
+  border-inline-start: 2px solid #ff9800;
   border-radius: 2px;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .loading {
   color: #ff9800;
-  font-family: monospace;
+  font-family: inherit;
   font-size: 12px;
   margin: 0;
   font-style: italic;
@@ -112,7 +119,7 @@
 .diagnostic {
   margin: 0;
   background: #2e1e1e;
-  border-left: 2px solid #f44336;
+  border-inline-start: 2px solid #f44336;
   border-radius: 2px;
   overflow-x: hidden;
 }
@@ -128,7 +135,7 @@
   background: none;
   border: none;
   color: #b58a8a;
-  font-family: monospace;
+  font-family: inherit;
   font-size: 11px;
   padding: 0.35rem 0.75rem;
   cursor: pointer;
