@@ -14,5 +14,11 @@ indent_size = 4
 [Makefile]
 indent_style = tab
 
-[*.md]
+# Markdown: trailing spaces are hard line breaks
+[*.{md,mdx}]
+trim_trailing_whitespace = false
+
+# Verbatim fixtures and diffs: whitespace is part of the content
+[*.{golden,rendered,patch}]
+insert_final_newline = false
 trim_trailing_whitespace = false
