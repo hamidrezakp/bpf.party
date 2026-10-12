@@ -1,6 +1,13 @@
 import type { SSEEvent } from "../types/sse-events";
 
-const API_BASE_URL = import.meta.env.DEV ? "http://localhost:8081" : "";
+// In dev (`pnpm dev`) the editor talks to the backend directly; the default
+// matches the Compose backend's loopback publish. Override with
+// PUBLIC_API_BASE_URL in website/.env (e.g. a remote backend, or a
+// non-default BACKEND_PORT). Production builds default to same-origin
+// requests proxied by nginx. See README "Environment variables".
+const API_BASE_URL =
+  import.meta.env.PUBLIC_API_BASE_URL ??
+  (import.meta.env.DEV ? "http://localhost:8081" : "");
 
 export function runCode(
   code: string,

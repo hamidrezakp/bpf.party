@@ -4,7 +4,7 @@
 
 The website and blog use Persian RTL layouts; the editor, code, identifiers, and compiler/verifier output stay LTR. No local eBPF toolchain is needed to use a deployed instance.
 
-[Quick start](#quick-start) · [Architecture](#architecture) · [Execution workflow](#execution-workflow) · [Repository structure](#repository-structure) · [Exercises and sample code](#exercises-and-sample-code) · [Local development](#local-development) · [API and configuration](#api-and-configuration) · [Contributor workflow](#contributor-workflow) · [Testing and troubleshooting](#testing-and-troubleshooting) · [Blog](#blog)
+[Quick start](#quick-start) · [Architecture](#architecture) · [Execution workflow](#execution-workflow) · [Repository structure](#repository-structure) · [Exercises and sample code](#exercises-and-sample-code) · [Local development](#local-development) · [API and configuration](#api-and-configuration) · [Environment variables](#environment-variables) · [Contributor workflow](#contributor-workflow) · [Testing and troubleshooting](#testing-and-troubleshooting) · [Blog](#blog)
 
 ## Quick start
 
@@ -17,7 +17,7 @@ docker compose up --build       # website + code execution + blog
 
 Choose one mode. Website-only mode needs Docker but not KVM; execution is unavailable and `/run_code/` and `/metrics` return 502 until the backend is running. Nginx resolves the optional backend at request time, so its absence does not prevent startup.
 
-Full-stack mode requires an **x86-64 Linux host with usable `/dev/kvm`**, including nested virtualization if the host is itself a VM. Compose runs the backend privileged; its entrypoint allocates the required hugepages at startup. The first build is substantial: it compiles a patched Linux kernel, Rust binaries, a guest rootfs, and browser WASM artifacts. The web service publishes `8080` and reaches the backend through nginx; the backend publishes `127.0.0.1:8081` only, so the Astro dev server on the host can use the containerized backend.
+Full-stack mode requires an **x86-64 Linux host with usable `/dev/kvm`**, including nested virtualization if the host is itself a VM. Compose runs the backend privileged; its entrypoint allocates the required hugepages at startup. The first build is substantial: it compiles a patched Linux kernel, Rust binaries, a guest rootfs, and browser WASM artifacts. The web service publishes `8080` and reaches the backend through nginx; the backend publishes `127.0.0.1:8081` only, so the Astro dev server on the host can use the containerized backend. Ports, hugepages, and build versions can be overridden without editing the Compose file: copy [`.env.example`](.env.example) to `.env` and adjust ([environment variables](#environment-variables)).
 
 Open `/exercises/`, select an exercise, read its instructions, edit its starter C program, and run it. Inspect debug events or diagnostics, then submit the requested value through a `SUBMIT_*` macro. Code, editor settings, and progress are stored locally in your browser; unavailable or corrupt storage does not block editing.
 
@@ -191,7 +191,7 @@ make website-install          # locked pnpm install
 make website-dev              # Astro dev server; use the URL printed at startup
 ```
 
-Development requests go directly to `http://localhost:8081`; production uses same-origin nginx proxying. The Compose backend publishes `127.0.0.1:8081`, so a browser using the Astro dev server can rely on the containerized backend. `make website` builds static output; `make website-docker` builds the web image. `fetch-artifacts.sh` skips existing artifacts; header/TCC changes require rebuilding `website_bindings`, not simply rerunning this script.
+Development requests go directly to the backend — the dev API base defaults to `http://localhost:8081` and can be overridden with `PUBLIC_API_BASE_URL` in `website/.env` (for example to match a non-default `BACKEND_PORT`, or to use a remote backend); production uses same-origin nginx proxying. The Compose backend publishes `127.0.0.1:8081`, so a browser using the Astro dev server can rely on the containerized backend. `make website` builds static output; `make website-docker` builds the web image. `fetch-artifacts.sh` skips existing artifacts; header/TCC changes require rebuilding `website_bindings`, not simply rerunning this script.
 
 ```bash
 rustup target add x86_64-unknown-linux-musl
@@ -243,7 +243,40 @@ Other stream events include `booting`, `stack` (DWARF), `compileError`, `noCapac
 | `clang_path`, `includes_path`          | `/usr/bin/clang`, `/app/includes/`; compiler and supplied headers. |
 | `rootfs_path`, `vmlinux_path`          | `/app/rootfs.ext4`, `/app/vmlinux`; guest artifacts.               |
 
-Local defaults are in `backend/config.toml`; container defaults are in `docker/config.toml`. CORS permits local HTTP development origins (`localhost` / `127.0.0.1` with ports); deploy API traffic behind the same origin. Nginx disables SSE buffering/caching, caches fingerprinted Astro assets for a year, revalidates stable TCC assets, and returns 404 for unknown static routes. Website image build arguments include `EMSDK_VERSION`, `NODE_VERSION`, and `NGINX_VERSION`; backend defaults use Linux 6.18.2 and Firecracker v1.16.1. Changing kernel versions also requires checking patch/header compatibility.
+Local defaults are in `backend/config.toml`; container defaults are in `docker/config.toml`. CORS permits local HTTP development origins (`localhost` / `127.0.0.1` with ports); deploy API traffic behind the same origin. Nginx disables SSE buffering/caching, caches fingerprinted Astro assets for a year, revalidates stable TCC assets, and returns 404 for unknown static routes.
+
+## Environment variables
+
+Each `.env.example` documents the dynamic configuration of its scope; copy it to a git-ignored `.env` next to it to override. Docker Compose reads the repository root `.env` automatically, and Astro reads `website/.env` for both `pnpm dev` and `pnpm build`. The backend and blog are configured through files instead — `backend/config.toml` (table above) and `blog/_config.yml` — so they ship no `.env`; their actual environment variables are listed below.
+
+**Website** — see [`website/.env.example`](website/.env.example). Browser code only sees variables prefixed with `PUBLIC_`:
+
+| Variable              | Default (dev)           | Default (build)    | Purpose                                                                                                                       |
+| --------------------- | ----------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
+| `PUBLIC_API_BASE_URL` | `http://localhost:8081` | same-origin (`""`) | Base URL the editor posts C source to (`website/src/lib/api-client.ts`). Keep in sync with Compose's `BACKEND_PORT`. Pointing a production build at a non-localhost URL also requires backend CORS changes. |
+
+**Docker Compose** — see [`.env.example`](.env.example):
+
+| Variable             | Default   | Used by         | Purpose                                                                                                                                                     |
+| ------------------- | --------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BACKEND_PORT`      | `8081`    | backend ports   | Host loopback port publishing the containerized backend; this is what the Astro dev server talks to.                                                        |
+| `WEB_PORT`          | `8080`    | web ports       | Host port for the static website.                                                                                                                            |
+| `BLOG_PORT`         | `4000`    | blog ports      | Host port for the blog; `4000` matches `make blog-dev`.                                                                                                      |
+| `REQUIRED_HUGEPAGES`| `128`     | backend runtime | 2-MiB hugepages the entrypoint allocates when the host has fewer: `ceil(max_concurrent_vms × 64 / 2)`. Changing the VM count itself means editing `docker/config.toml` and rebuilding the image. |
+| `FC_VERSION`        | `v1.16.1` | backend build   | Firecracker release installed alongside the in-process VMM.                                                                                                  |
+| `KERNEL_VERSION`    | `6.18.2`  | backend build   | Patched kernel version; must stay compatible with `verifier-provenance.patch` and `backend/includes/task.h`.                                                 |
+
+Web and blog toolchain build args (`EMSDK_VERSION`, `NODE_VERSION`, `NGINX_VERSION`, `RUBY_VERSION`) default inside the Dockerfiles; override them per build with `docker compose build --build-arg KEY=VALUE`.
+
+**Backend** — no `.env`; local runs read `config.toml` from the working directory:
+
+| Variable                  | Used by                         | Purpose                                                     |
+| ------------------------- | ------------------------------- | ------------------------------------------------------------ |
+| `REQUIRED_HUGEPAGES`      | `docker/entrypoint-backend.sh`  | Same as the Compose row above.                               |
+| `EBPF_PARTY_TEST_VMLINUX` | `cargo test --test diag_golden` | Overrides the patched-kernel path for diagnostic fixtures.   |
+| `UPDATE_GOLDEN`           | `cargo test --test diag_golden` | Regenerates golden fixtures instead of comparing against them. |
+
+**Blog** — no `.env`; site settings live in `blog/_config.yml` (`url`, `baseurl`, `main_site`, timezone). `make blog` and the blog image build set `JEKYLL_ENV=production` for production SEO/RSS output; `make blog-dev` serves in development mode.
 
 ## Contributor workflow
 

@@ -20,7 +20,7 @@ The three Rust crates are **separate Cargo projects** (no workspace), each with 
 
 ## Commands
 
-- Website: `cd website && pnpm install && pnpm dev` (dev server talks to backend at `http://localhost:8081`, see `website/src/lib/api-client.ts`). Tests: `pnpm test` (vitest). Build: `pnpm build`.
+- Website: `cd website && pnpm install && pnpm dev` (dev server talks to backend at `http://localhost:8081` by default, overridable via `PUBLIC_API_BASE_URL` in `website/.env`; see `website/src/lib/api-client.ts`). Tests: `pnpm test` (vitest). Build: `pnpm build`.
 - Blog: `make blog-install`, `make blog-dev` (localhost:4000), `make blog-check` (production build + tests + Jekyll doctor). Output: `blog/_site/`; independent of the backend and Compose services.
 - TCC WASM artifacts (needed by the editor): `./scripts/fetch-artifacts.sh` (requires `emcc`).
 - Backend: `cd backend && cargo build --release`; runs from `backend/` reading `config.toml` (expects `./clang`, `../vmlinux`, `../rootfs.ext4`, hugepages, `/dev/kvm`).

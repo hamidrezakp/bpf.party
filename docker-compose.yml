@@ -1,3 +1,9 @@
+# Variable defaults are read from a root `.env` file (see .env.example):
+# published ports, hugepages, and backend build versions can be overridden
+# without editing this file. Web/blog toolchain build args (EMSDK_VERSION,
+# NODE_VERSION, NGINX_VERSION, RUBY_VERSION) default inside the Dockerfiles
+# and can be overridden with `docker compose build --build-arg KEY=VALUE`.
+
 services:
   backend:
     image: bpflab/backend:latest
@@ -5,8 +11,8 @@ services:
       context: .
       dockerfile: docker/Dockerfile.backend
       args:
-        FC_VERSION: v1.16.1
-        KERNEL_VERSION: "6.18.2"
+        FC_VERSION: ${FC_VERSION:-v1.16.1}
+        KERNEL_VERSION: ${KERNEL_VERSION:-6.18.2}
     # privileged instead of Compose sysctls: vm.nr_hugepages is not
     # namespaced, so Docker rejects `sysctls:` for it. The entrypoint
     # allocates the hugepages itself (REQUIRED_HUGEPAGES, default 128 pages
@@ -17,10 +23,13 @@ services:
     cap_add:
       - NET_ADMIN
     # Loopback-only convenience for the host Astro dev server, whose dev-mode
-    # API base is http://localhost:8081. The web service reaches the backend
-    # over the Compose network (nginx proxies /run_code/ and /metrics).
+    # API base is http://localhost:8081 (overridable with PUBLIC_API_BASE_URL
+    # in website/.env). The web service reaches the backend over the Compose
+    # network (nginx proxies /run_code/ and /metrics).
+    environment:
+      REQUIRED_HUGEPAGES: ${REQUIRED_HUGEPAGES:-128}
     ports:
-      - "127.0.0.1:8081:8081"
+      - "127.0.0.1:${BACKEND_PORT:-8081}:8081"
     restart: unless-stopped
 
   web:
@@ -29,7 +38,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile.website
     ports:
-      - "8080:8080"
+      - "${WEB_PORT:-8080}:8080"
     restart: unless-stopped
 
   blog:
@@ -41,5 +50,5 @@ services:
     # local Jekyll dev server are interchangeable; inside the container nginx
     # listens on unprivileged 8080 like `web`. Independent of backend/web.
     ports:
-      - "4000:8080"
+      - "${BLOG_PORT:-4000}:8080"
     restart: unless-stopped
