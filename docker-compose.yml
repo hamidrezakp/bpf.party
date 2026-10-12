@@ -1,5 +1,6 @@
 services:
   backend:
+    image: bpflab/backend:latest
     build:
       context: .
       dockerfile: docker/Dockerfile.backend
@@ -23,6 +24,7 @@ services:
     restart: unless-stopped
 
   web:
+    image: bpflab/web:latest
     build:
       context: .
       dockerfile: docker/Dockerfile.website
@@ -31,6 +33,7 @@ services:
     restart: unless-stopped
 
   blog:
+    image: bpflab/blog:latest
     build:
       context: .
       dockerfile: docker/Dockerfile.blog
