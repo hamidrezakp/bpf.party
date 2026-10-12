@@ -37,6 +37,7 @@
     "SIOCSIFADDR",
     "SIOCSIFFLAGS",
     "Sockaddr",
+    "sysctls",
     "sysfs",
     "tracefs",
     "tracepoint",

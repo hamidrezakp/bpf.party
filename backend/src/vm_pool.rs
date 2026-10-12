@@ -99,8 +99,9 @@ impl VmPermit {
         };
 
         let t_out = out_tx.clone();
+        let reader_path = vsock_listener.clone();
         let handle = thread::spawn(move || {
-            let listener = UnixListener::bind(vsock_listener).unwrap();
+            let listener = UnixListener::bind(reader_path).unwrap();
             let mut stream = listener.incoming().next().unwrap().unwrap();
             stream
                 .set_read_timeout(Some(Duration::from_millis(500)))
@@ -138,17 +139,27 @@ impl VmPermit {
             });
         });
 
-        let vm = v.make(
+        // This cap is the VM's total lifetime: the kernel alone needs ~0.8s
+        // to reach init, so it must cover boot + the 500ms exercise timeout
+        // (plus cold-cache margin), or healthy VMs get force-stopped mid-boot.
+        let vm = match v.make(
             Box::new(std::io::stderr()),
-            Some(Duration::from_millis(500)),
-        );
-        let vm = if let Ok(vm) = vm {
-            vm
-        } else {
-            println!("VM died");
-            let _ = out_tx.send(PlatformMessage::GuestMessage(GuestMessage::Finished));
-            return;
+            Some(Duration::from_secs(10)),
+        ) {
+            Ok(vm) => vm,
+            Err(e) => {
+                println!("VM died: {e:?}");
+                let _ = out_tx.send(PlatformMessage::GuestMessage(GuestMessage::Finished));
+                unblock_vsock_accept(&vsock_listener);
+                let _ = handle.join();
+                return;
+            }
         };
+        // Same race on the happy path: if the guest exited without ever
+        // connecting over vsock (e.g. init panic), the accept below would
+        // block forever. The connect must happen before the socket files are
+        // unlinked by the permit drop below.
+        unblock_vsock_accept(&vsock_listener);
         // dropping takes ~30ms, do it in a thread
         // only release the permit after the vm is done
         thread::spawn(move || {
@@ -157,8 +168,20 @@ impl VmPermit {
         });
         io::stdout().flush().unwrap();
         io::stderr().flush().unwrap();
-        handle.join().unwrap();
+        if handle.join().is_err() {
+            eprintln!("vsock thread panicked");
+        }
     }
+}
+
+/// The vsock reader thread blocks in accept() while holding the last sender
+/// clone of the SSE channel; the response body only closes once every sender
+/// is dropped. When the VM is gone no guest connection can ever arrive, so
+/// wake the accept up with a throwaway connection: accept() returns, the
+/// bincode decode hits EOF, and the thread exits. If the guest already
+/// connected this is a harmless no-op (the connect just sits in the backlog).
+fn unblock_vsock_accept(vsock_listener: &str) {
+    let _ = std::os::unix::net::UnixStream::connect(vsock_listener);
 }
 
 impl Drop for VmPermit {

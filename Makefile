@@ -93,6 +93,11 @@ rootfs/bin:
 rootfs/sys:
 	mkdir -p $@
 
-rootfs.ext4: rootfs/exit_with_code rootfs/true rootfs/main rootfs/bin rootfs/sys
+rootfs.ext4: rootfs/exit_with_code rootfs/true rootfs/main rootfs/bin rootfs/sys rootfs/tmp
 	truncate -s 16M $@
 	mkfs.ext4 -q -F -d rootfs $@
+	# The guest init (userspace/src/setup.rs) mounts sysfs on /sys and ramfs
+	# on /bin and /tmp; a missing mountpoint makes PID 1 exit, which panics
+	# the kernel ("Attempted to kill init") before the guest ever connects.
+	# Assert the layout here so a forgotten prerequisite fails the build.
+	debugfs -R 'ls -p /' $@ 2>/dev/null | grep -q '/tmp/' || { echo "ERROR: /tmp missing from $@" >&2; exit 1; }
