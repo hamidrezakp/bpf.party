@@ -51,6 +51,9 @@ replacements = [
     ("Connection { key: ConnMapKey, evset: EventSet }", "Connection { key: ConnMapKey, evset: UtilsEventSet }"),
     ("fn handle_event(&mut self, fd: RawFd, event_set: EventSet)", "fn handle_event(&mut self, fd: RawFd, event_set: UtilsEventSet)"),
     ("conn.notify(event_set);", "conn.notify(manager_event_set(event_set));"),
+    # Must run before the UtilsUtilsEventSet cleanup below: re-patching an
+    # already-patched file double-prefixes, and the cleanup undoes it.
+    ("EventSet::from_bits(ev.events).unwrap()", "UtilsEventSet::from_bits(ev.events).unwrap()"),
     ("UtilsUtilsEventSet::from_bits(ev.events).unwrap()", "UtilsEventSet::from_bits(ev.events).unwrap()"),
     ("EpollEvent::new(EventSet::empty(), 0)", "EpollEvent::new(UtilsEventSet::empty(), 0)"),
     ("evset: conn.get_polled_evset()", "evset: utils_event_set(conn.get_polled_evset())"),

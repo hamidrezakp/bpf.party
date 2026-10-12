@@ -1,19 +1,25 @@
 services:
   backend:
-    profiles: ["full"]
     build:
       context: .
       dockerfile: docker/Dockerfile.backend
       args:
         FC_VERSION: v1.16.1
         KERNEL_VERSION: "6.18.2"
+    # privileged instead of Compose sysctls: vm.nr_hugepages is not
+    # namespaced, so Docker rejects `sysctls:` for it. The entrypoint
+    # allocates the hugepages itself (REQUIRED_HUGEPAGES, default 128 pages
+    # for max_concurrent_vms = 4) and needs cgroup/KVM access for the VMs.
     privileged: true
     devices:
       - /dev/kvm
     cap_add:
       - NET_ADMIN
-    sysctls:
-      vm.nr_hugepages: 128
+    # Loopback-only convenience for the host Astro dev server, whose dev-mode
+    # API base is http://localhost:8081. The web service reaches the backend
+    # over the Compose network (nginx proxies /run_code/ and /metrics).
+    ports:
+      - "127.0.0.1:8081:8081"
     restart: unless-stopped
 
   web:

@@ -25,7 +25,7 @@ The three Rust crates are **separate Cargo projects** (no workspace), each with 
 - TCC WASM artifacts (needed by the editor): `./scripts/fetch-artifacts.sh` (requires `emcc`).
 - Backend: `cd backend && cargo build --release`; runs from `backend/` reading `config.toml` (expects `./clang`, `../vmlinux`, `../rootfs.ext4`, hugepages, `/dev/kvm`).
 - Userspace must target musl: `cd userspace && LIBBPF_SYS_EXTRA_CFLAGS="-idirafter /usr/include/x86_64-linux-gnu -idirafter /usr/include" cargo build --release --target x86_64-unknown-linux-musl`. Prefer `make rootfs.ext4` (needs `NOLIBC_INCLUDE`).
-- Full host build: `./scripts/build-backend-artifacts.sh`. Full stack via Docker: `docker compose --profile full up --build` (slow: kernel compile).
+- Full host build: `./scripts/build-backend-artifacts.sh`. Full stack via Docker: `docker compose up --build` (website-only: `docker compose up --build web`; slow: kernel compile).
 
 ## Tests
 

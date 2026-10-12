@@ -11,13 +11,13 @@ The website and blog use Persian RTL layouts; the editor, code, identifiers, and
 Run commands from the repository root unless a command explicitly changes directories.
 
 ```bash
-docker compose up --build web                 # website only: http://localhost:8080
-docker compose --profile full up --build      # website + code execution
+docker compose up --build web   # website only: http://localhost:8080
+docker compose up --build       # website + code execution
 ```
 
 Choose one mode. Website-only mode needs Docker but not KVM; execution is unavailable and `/run_code/` and `/metrics` return 502 until the backend is running. Nginx resolves the optional backend at request time, so its absence does not prevent startup.
 
-Full-stack mode requires an **x86-64 Linux host with usable `/dev/kvm`**, including nested virtualization if the host is itself a VM. Compose runs the backend privileged and configures hugepages. The first build is substantial: it compiles a patched Linux kernel, Rust binaries, a guest rootfs, and browser WASM artifacts. Only the web service publishes a host port (`8080`); the backend is reached through nginx.
+Full-stack mode requires an **x86-64 Linux host with usable `/dev/kvm`**, including nested virtualization if the host is itself a VM. Compose runs the backend privileged; its entrypoint allocates the required hugepages at startup. The first build is substantial: it compiles a patched Linux kernel, Rust binaries, a guest rootfs, and browser WASM artifacts. The web service publishes `8080` and reaches the backend through nginx; the backend publishes `127.0.0.1:8081` only, so the Astro dev server on the host can use the containerized backend.
 
 Open `/exercises/`, select an exercise, read its instructions, edit its starter C program, and run it. Inspect debug events or diagnostics, then submit the requested value through a `SUBMIT_*` macro. Code, editor settings, and progress are stored locally in your browser; unavailable or corrupt storage does not block editing.
 
@@ -189,7 +189,7 @@ make website-install          # locked pnpm install
 make website-dev              # Astro dev server; use the URL printed at startup
 ```
 
-Development requests go directly to `http://localhost:8081`; production uses same-origin nginx proxying. The Compose backend port is not published by default, so a browser using the Astro dev server needs a separately reachable backend. `make website` builds static output; `make website-docker` builds the web image. `fetch-artifacts.sh` skips existing artifacts; header/TCC changes require rebuilding `website_bindings`, not simply rerunning this script.
+Development requests go directly to `http://localhost:8081`; production uses same-origin nginx proxying. The Compose backend publishes `127.0.0.1:8081`, so a browser using the Astro dev server can rely on the containerized backend. `make website` builds static output; `make website-docker` builds the web image. `fetch-artifacts.sh` skips existing artifacts; header/TCC changes require rebuilding `website_bindings`, not simply rerunning this script.
 
 ```bash
 rustup target add x86_64-unknown-linux-musl

@@ -3,72 +3,166 @@
 ARG FC_VERSION=v1.16.1
 ARG KERNEL_VERSION=6.18.2
 
+# ---------------------------------------------------------------------------
+# builder: backend binary + rootfs.ext4
+# ---------------------------------------------------------------------------
 FROM rust:1.89-bookworm AS builder
-RUN apt-get update \
+ARG KERNEL_VERSION
+# The rust image is based on buildpack-deps and already ships gcc/g++/make/
+# patch/pkg-config/python3/curl/git/perl, so only the extras are installed.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update \
   && apt-get install -y --no-install-recommends \
-  bc bison clang curl ca-certificates flex gcc git libelf-dev libssl-dev gawk build-essential \
-  llvm make musl-tools patch pkg-config python3 rsync xz-utils e2fsprogs autopoint \
-  libc6-dev zlib1g-dev libzstd-dev \
-  && rm -rf /var/lib/apt/lists/* \
+       autopoint bison e2fsprogs flex gawk libelf-dev libzstd-dev musl-tools zlib1g-dev \
   && rustup target add x86_64-unknown-linux-musl
-WORKDIR /build
-COPY shared ./shared
-COPY bins ./bins
-COPY userspace ./userspace
-COPY userspace/Cargo.lock ./userspace/Cargo.lock
-COPY backend ./backend
-COPY Makefile ./Makefile
-COPY .cargo ./.cargo
-COPY docker/firecracker-spawn.Cargo.toml ./docker/firecracker-spawn.Cargo.toml
-COPY scripts/setup-firecracker-spawn.sh ./scripts/setup-firecracker-spawn.sh
-COPY scripts/patch-firecracker.sh ./scripts/patch-firecracker.sh
-COPY scripts/patch-firecracker-spawn.sh ./scripts/patch-firecracker-spawn.sh
-RUN bash scripts/setup-firecracker-spawn.sh
-RUN mkdir -p /tmp/nolibc \
-  && curl -fsSL https://github.com/torvalds/linux/archive/refs/tags/v6.18.tar.gz \
-  | tar -xzf - -C /tmp/nolibc --strip-components=4 linux-6.18/tools/include/nolibc
-ENV NOLIBC_INCLUDE=/tmp/nolibc
-RUN make rootfs.ext4
-RUN cd userspace \
-  && LIBBPF_SYS_EXTRA_CFLAGS="-idirafter /usr/include/x86_64-linux-gnu -idirafter /usr/include" \
-  cargo build --release --target x86_64-unknown-linux-musl
-RUN cd backend && cargo build --release
 
+WORKDIR /build
+
+# 1. External sources (firecracker + firecracker-spawn). Rarely change, so
+#    keep them in an early layer of their own.
+COPY docker/firecracker-spawn.Cargo.toml docker/firecracker-spawn.Cargo.toml
+COPY scripts/setup-firecracker-spawn.sh scripts/patch-firecracker.sh scripts/patch-firecracker-spawn.sh scripts/
+RUN bash scripts/setup-firecracker-spawn.sh
+
+# 2. nolibc headers via a sparse git clone: a few MB instead of downloading
+#    and extracting a full ~230 MB kernel tarball.
+RUN git clone --depth 1 --filter=blob:none --sparse --branch "v${KERNEL_VERSION}" \
+       https://github.com/gregkh/linux /tmp/nolibc-src \
+ && git -C /tmp/nolibc-src sparse-checkout set tools/include/nolibc \
+ && mkdir -p /tmp/nolibc \
+ && cp -a /tmp/nolibc-src/tools/include/nolibc/. /tmp/nolibc/ \
+ && rm -rf /tmp/nolibc-src
+ENV NOLIBC_INCLUDE=/tmp/nolibc
+
+# 3. musl ships no argp, but the vendored elfutils includes <argp.h> from
+#    lib/color.c and lib/printversion.h (libbpf-sys does not forward
+#    LIBBPF_SYS_EXTRA_CFLAGS to the elfutils build, so the Makefile's
+#    -idirafter fallbacks don't apply there). Install the musl-compatible
+#    argp-standalone header (pinned) into musl-gcc's default include dir.
+#    Only the declarations are needed: the objects that call argp functions
+#    are never linked into libelf.
+RUN curl -fsSL https://raw.githubusercontent.com/ericonr/argp-standalone/e7ff8d9787d2641e55f6ac4afb777da60ef98043/argp.h \
+      -o /usr/include/x86_64-linux-musl/argp.h
+
+# 4. Manifests first, then prefetch all crate dependencies. This layer stays
+#    cached across source-only edits.
+COPY .cargo ./.cargo
+COPY shared/Cargo.toml shared/Cargo.toml
+COPY userspace/Cargo.toml userspace/Cargo.lock userspace/
+COPY backend/Cargo.toml backend/Cargo.lock backend/
+# Placeholder targets so cargo can parse the manifests; they are overwritten
+# when the real sources are copied in steps 5 and 6.
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
+    mkdir -p shared/src userspace/src backend/src \
+ && touch shared/src/lib.rs userspace/src/main.rs backend/src/main.rs \
+ && cargo fetch --locked --manifest-path userspace/Cargo.toml \
+ && cargo fetch --locked --manifest-path backend/Cargo.toml
+
+# 5. rootfs.ext4 (bins + userspace init). Does not depend on backend sources,
+#    so backend edits never invalidate it.
+COPY Makefile ./
+COPY bins bins
+COPY shared shared
+COPY userspace userspace
+# libbpf-sys builds a vendored elfutils for the musl target. musl has neither
+# argp nor obstacks, so elfutils' configure checks for argp_parse and
+# _obstack_free fail even though only elfutils/lib + libelf are built
+# (BUILD_STATIC_ONLY=y) — the argp/obstack consumers live in elfutils src/,
+# which is never compiled. Pre-seed the autoconf cache to skip the checks.
+ENV ac_cv_search_argp_parse="none required" \
+    ac_cv_search__obstack_free="none required"
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
+    --mount=type=cache,target=/build/userspace/target,sharing=locked \
+    make rootfs.ext4
+
+# 6. Backend toolchain extras: bindgen (run by backend dependencies such as
+#    userfaultfd-sys) loads libclang at build time, and aws-lc-sys drives its
+#    C build with cmake. Kept in their own late layer: backend source edits
+#    below never re-install them, and they never invalidate the rootfs build
+#    above.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update \
+ && apt-get install -y --no-install-recommends cmake libclang-dev
+
+# 7. Backend binary. The target dir is a cache mount, so rebuilds recompile
+#    only the crates that changed; the binary is copied out of the mount so
+#    later COPY --from can see it.
+COPY backend backend
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
+    --mount=type=cache,target=/build/backend/target,sharing=locked \
+    cargo build --release --locked --manifest-path backend/Cargo.toml \
+ && cp backend/target/release/backend /build/backend-bin
+
+# ---------------------------------------------------------------------------
+# kernel: DIAG1-patched vmlinux
+# ---------------------------------------------------------------------------
 FROM debian:bookworm-slim AS kernel
 ARG KERNEL_VERSION
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update \
   && apt-get install -y --no-install-recommends \
-  bc bison curl ca-certificates flex gcc libelf-dev libssl-dev gawk \
-  make patch python3 rsync xz-utils \
-  && rm -rf /var/lib/apt/lists/*
+       bc bison ccache curl ca-certificates flex gcc libelf-dev libssl-dev gawk \
+       make patch python3 rsync xz-utils
+
+# Wrap gcc with ccache in PATH so kbuild transparently reuses compiled
+# objects across image rebuilds (kbuild ignores a CC environment variable,
+# hence the shim instead of ENV CC).
+RUN mkdir -p /usr/local/lib/ccache-shim \
+ && printf '#!/bin/sh\nexec ccache /usr/bin/gcc "$@"\n' > /usr/local/lib/ccache-shim/gcc \
+ && cp /usr/local/lib/ccache-shim/gcc /usr/local/lib/ccache-shim/cc \
+ && chmod +x /usr/local/lib/ccache-shim/gcc /usr/local/lib/ccache-shim/cc
+ENV PATH=/usr/local/lib/ccache-shim:$PATH \
+    CCACHE_DIR=/build/ccache \
+    CCACHE_COMPRESS=1
+
 WORKDIR /build/repo
 COPY verifier-provenance.patch ./
 COPY docker/bpf-party-kernel.fragment docker/
 COPY scripts/build-vmlinux.sh scripts/
-RUN chmod +x scripts/build-vmlinux.sh
 ENV ROOT=/build/repo \
-  BUILD_DIR=/build/kernel-tree \
-  OUTPUT=/build/vmlinux \
-  KERNEL_VERSION=${KERNEL_VERSION}
-RUN ./scripts/build-vmlinux.sh
+    BUILD_DIR=/build/kernel-tree \
+    OUTPUT=/build/vmlinux \
+    KERNEL_VERSION=${KERNEL_VERSION}
 
+# /build/downloads caches the kernel tarball, ccache the compiler output.
+RUN --mount=type=cache,target=/build/ccache,sharing=locked \
+    --mount=type=cache,target=/build/downloads,sharing=locked \
+    mkdir -p "$BUILD_DIR" \
+ && if [ -f "/build/downloads/linux-${KERNEL_VERSION}.tar.xz" ]; then \
+        cp "/build/downloads/linux-${KERNEL_VERSION}.tar.xz" "$BUILD_DIR/"; \
+    fi \
+ && ./scripts/build-vmlinux.sh \
+ && cp "$BUILD_DIR/linux-${KERNEL_VERSION}.tar.xz" /build/downloads/
+
+# ---------------------------------------------------------------------------
+# runtime
+# ---------------------------------------------------------------------------
 FROM debian:bookworm-slim AS runtime
 ARG FC_VERSION
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-  ca-certificates clang curl gawk \
-  && rm -rf /var/lib/apt/lists/*
-COPY scripts/install-firecracker.sh /tmp/install-firecracker.sh
-RUN chmod +x /tmp/install-firecracker.sh \
-  && FC_VERSION="${FC_VERSION}" /tmp/install-firecracker.sh \
-  && rm /tmp/install-firecracker.sh
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates clang curl
+
+# Install firecracker + jailer without baking the installer into a layer.
+RUN --mount=type=bind,source=scripts/install-firecracker.sh,target=/tmp/install-firecracker.sh \
+    FC_VERSION="${FC_VERSION}" bash /tmp/install-firecracker.sh
+
 WORKDIR /app
-COPY --from=kernel /build/vmlinux /app/vmlinux
-COPY --from=builder /build/backend/target/release/backend /usr/local/bin/backend
-COPY --from=builder /build/rootfs.ext4 /app/rootfs.ext4
-COPY backend/includes /app/includes
-COPY docker/config.toml /app/config.toml
-COPY docker/entrypoint-backend.sh /app/entrypoint-backend.sh
-RUN chmod +x /app/entrypoint-backend.sh
+COPY --link --from=kernel /build/vmlinux /app/vmlinux
+COPY --link --from=builder /build/rootfs.ext4 /app/rootfs.ext4
+COPY --link --from=builder /build/backend-bin /usr/local/bin/backend
+COPY --link backend/includes /app/includes
+COPY --link docker/config.toml /app/config.toml
+COPY --link --chmod=755 docker/entrypoint-backend.sh /app/entrypoint-backend.sh
+
 EXPOSE 8081
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:8081/metrics || exit 1
 ENTRYPOINT ["/app/entrypoint-backend.sh"]

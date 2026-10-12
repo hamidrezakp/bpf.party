@@ -1,0 +1,31 @@
+# Build-context filter used only by docker/Dockerfile.backend
+# (takes precedence over the root .dockerignore).
+
+# VCS / editor tooling
+.git
+.gitmodules
+.cursor
+.vscode
+.editorconfig
+
+# Website / blog / TCC WASM — not part of the backend image
+website
+blog
+tcc
+
+# Local build artifacts and vendored clones
+.build
+firecracker
+firecracker-spawn
+rootfs
+rootfs.ext4
+vmlinux
+docker/artifacts
+**/target
+
+# Backend test fixtures are not needed to build the image
+backend/tests
+
+# Secrets
+**/.env
+**/.env.*
