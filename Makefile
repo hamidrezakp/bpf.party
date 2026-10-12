@@ -1,5 +1,5 @@
 .PHONY: all website_bindings website website-install website-dev website-check website-test website-format website-docker
-.PHONY: blog blog-install blog-dev blog-check blog-test
+.PHONY: blog blog-install blog-dev blog-check blog-test blog-docker
 
 BUNDLE ?= bundle
 
@@ -46,6 +46,9 @@ blog-test:
 
 blog-check: blog blog-test
 	cd blog && $(BUNDLE) exec jekyll doctor
+
+blog-docker:
+	docker compose build blog
 
 backend/includes/kfuncs.h:
 	# generating this automatically requires a new pahole & bpftool

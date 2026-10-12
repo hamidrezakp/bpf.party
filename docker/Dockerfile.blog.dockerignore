@@ -1,0 +1,20 @@
+# Build-context filter used only by docker/Dockerfile.blog
+# (takes precedence over the root .dockerignore).
+
+# Deny by default: the blog builds from blog/ only, so new top-level
+# directories in the repo never enter this build context.
+*
+!blog
+!docker/nginx.blog.conf
+
+# Local Jekyll output, caches, and Bundler state (also gitignored) must not
+# leak into the context; these patterns re-exclude them inside blog/.
+blog/_site
+blog/.jekyll-cache
+blog/.jekyll-metadata
+blog/.sass-cache
+blog/.bundle
+blog/vendor
+
+# Development-only code generation helper, never needed to build or test.
+blog/tools

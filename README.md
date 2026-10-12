@@ -12,7 +12,7 @@ Run commands from the repository root unless a command explicitly changes direct
 
 ```bash
 docker compose up --build web   # website only: http://localhost:8080
-docker compose up --build       # website + code execution
+docker compose up --build       # website + code execution + blog
 ```
 
 Choose one mode. Website-only mode needs Docker but not KVM; execution is unavailable and `/run_code/` and `/metrics` return 502 until the backend is running. Nginx resolves the optional backend at request time, so its absence does not prevent startup.
@@ -20,6 +20,8 @@ Choose one mode. Website-only mode needs Docker but not KVM; execution is unavai
 Full-stack mode requires an **x86-64 Linux host with usable `/dev/kvm`**, including nested virtualization if the host is itself a VM. Compose runs the backend privileged; its entrypoint allocates the required hugepages at startup. The first build is substantial: it compiles a patched Linux kernel, Rust binaries, a guest rootfs, and browser WASM artifacts. The web service publishes `8080` and reaches the backend through nginx; the backend publishes `127.0.0.1:8081` only, so the Astro dev server on the host can use the containerized backend.
 
 Open `/exercises/`, select an exercise, read its instructions, edit its starter C program, and run it. Inspect debug events or diagnostics, then submit the requested value through a `SUBMIT_*` macro. Code, editor settings, and progress are stored locally in your browser; unavailable or corrupt storage does not block editing.
+
+The `blog` service builds and tests the Jekyll site and serves it at <http://localhost:4000>; run it alone with `docker compose up --build blog`.
 
 ## Architecture
 
@@ -30,7 +32,7 @@ Open `/exercises/`, select an exercise, read its instructions, edit its starter 
 | `backend/`   | Rust HTTP server using `touche`, threads, and channels rather than an async runtime; compiles source, manages VM capacity, streams results, grades answers. |
 | `userspace/` | Static Rust/musl guest init with libbpf; sets up the guest, attaches BPF programs, runs workloads, polls the debug ring buffer.                             |
 | `shared/`    | Exercise IDs, expected-answer generation, and bincode-encoded host/guest messages over vsock.                                                               |
-| `blog/`      | Independent Jekyll 4 site; not part of the execution stack or Compose services.                                                                             |
+| `blog/`      | Independent Jekyll 4 site with its own static Compose service; not part of the execution stack.                                                             |
 
 ```mermaid
 flowchart TB
@@ -264,7 +266,7 @@ Then rebuild frontend pages, backend, and guest rootfs; test a correct answer, w
 | Backend unit/DWARF tests  | From `backend/`: `cargo test --lib` and `cargo test --test dwarf_test`; Rust dependencies still require Firecracker setup, but these tests do not boot a VM.                                                                                                      |
 | Diagnostic goldens        | From `backend/`: `cargo test --test diag_golden`; requires KVM, rootfs, patched kernel, `./clang`, and a compatible `includes/task.h.pch`. Override kernel with `EBPF_PARTY_TEST_VMLINUX`; regenerate with `UPDATE_GOLDEN=1`, never hand-edit unverified goldens. |
 | Nginx smoke test          | `./scripts/test-web-nginx.sh`; Docker + curl; tests optional-backend startup/proxying using temporary containers/networks.                                                                                                                                        |
-| Blog                      | `make blog-test` (Ruby helpers/generated site in temporary destinations); `make blog-check` adds production build and Jekyll doctor.                                                                                                                              |
+| Blog                      | `make blog-test` (Ruby helpers/generated site in temporary destinations); `make blog-check` adds production build and Jekyll doctor. The same build/test/doctor sequence runs inside `docker compose build blog`.   |
 
 **Common blockers:** execution returns 502 → start/check the backend (`docker compose logs backend`); hugepage startup failure → verify host allocation and configured VM count; missing kernel → reconcile artifact/config paths; editor WASM errors → check all three generated TCC files and rebuild; missing lesson → check metadata/content/starter references. Do not expect a stock kernel to provide provenance diagnostics, or a static website-only deployment to execute programs.
 
@@ -272,7 +274,7 @@ Then rebuild frontend pages, backend, and guest rootfs; test a correct answer, w
 
 The independent [blog](blog/) matches BPFLab's dark blue/violet theme, glass cards, hexagon branding, and Vazirmatn font. It provides cover tiles, summaries, Jalali dates, Gravatar authors, reading time, tags, highlighted LTR code, and older/newer navigation; there are no comments or analytics. Website blog links always point to the production subdomain, even during development.
 
-Use **Ruby 3.3+ and Bundler** (`gem install bundler` if needed); dependencies are locked in `blog/Gemfile.lock`. `make blog-install` installs dependencies, `make blog-dev` serves <http://localhost:4000> with live reload, and `make blog` builds production output in `blog/_site/`. Blog builds need neither TCC nor KVM/backend services.
+Use **Ruby 3.3+ and Bundler** (`gem install bundler` if needed); dependencies are locked in `blog/Gemfile.lock`. `make blog-install` installs dependencies, `make blog-dev` serves <http://localhost:4000> with live reload, and `make blog` builds production output in `blog/_site/`. Blog builds need neither TCC nor KVM/backend services. Without a local Ruby toolchain, `make blog-docker` (or `docker compose build blog`) builds the image — locked gems, the production build, and the test suite — and `docker compose up blog` serves it at <http://localhost:4000>.
 
 Create `blog/_posts/YYYY-MM-DD-english-slug.md` with Persian content:
 
@@ -292,7 +294,7 @@ Put 16:9 covers in `blog/assets/images/posts/`; omission uses a themed placehold
 
 Authors must use **`Name <email>`**. The custom plugin normalizes/hashes emails for Gravatar and publishes display names—not raw emails—in SEO/RSS. Hashes are not anonymization; obtain consent. Google Fonts and Gravatar receive browser requests; see the blog about page for its privacy notice. Builds **must load plugins**: do not use `--safe` or GitHub Pages' built-in safe-mode build.
 
-**Publish only `blog/_site/`** to a static host for `blog.bpflab.ir`, using an external/CI Jekyll build if needed. Configure DNS, HTTPS, directory `index.html` handling, and `404.html` with HTTP 404 separately. `_config.yml` defines canonical URLs; `CNAME` declares a hostname but does not provision DNS or deploy. Output includes `/feed.xml`, `/sitemap.xml`, and `/robots.txt`; keep tests, tools, and Ruby source out of published output.
+**Publish only `blog/_site/`** to a static host for `blog.bpflab.ir`, using an external/CI Jekyll build or the `blog` Docker image (unprivileged nginx serving the same `_site/`) if needed. Configure DNS, HTTPS, directory `index.html` handling, and `404.html` with HTTP 404 separately. `_config.yml` defines canonical URLs; `CNAME` declares a hostname but does not provision DNS or deploy. Output includes `/feed.xml`, `/sitemap.xml`, and `/robots.txt`; keep tests, tools, and Ruby source out of published output.
 
 ## License
 

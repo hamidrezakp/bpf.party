@@ -29,3 +29,14 @@ services:
     ports:
       - "8080:8080"
     restart: unless-stopped
+
+  blog:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.blog
+    # Port 4000 matches `make blog-dev`, so the containerized blog and the
+    # local Jekyll dev server are interchangeable; inside the container nginx
+    # listens on unprivileged 8080 like `web`. Independent of backend/web.
+    ports:
+      - "4000:8080"
+    restart: unless-stopped
