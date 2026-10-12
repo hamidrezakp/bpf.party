@@ -251,29 +251,29 @@ Each `.env.example` documents the dynamic configuration of its scope; copy it to
 
 **Website** — see [`website/.env.example`](website/.env.example). Browser code only sees variables prefixed with `PUBLIC_`:
 
-| Variable              | Default (dev)           | Default (build)    | Purpose                                                                                                                       |
-| --------------------- | ----------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
+| Variable              | Default (dev)           | Default (build)    | Purpose                                                                                                                                                                                                     |
+| --------------------- | ----------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PUBLIC_API_BASE_URL` | `http://localhost:8081` | same-origin (`""`) | Base URL the editor posts C source to (`website/src/lib/api-client.ts`). Keep in sync with Compose's `BACKEND_PORT`. Pointing a production build at a non-localhost URL also requires backend CORS changes. |
 
 **Docker Compose** — see [`.env.example`](.env.example):
 
-| Variable             | Default   | Used by         | Purpose                                                                                                                                                     |
-| ------------------- | --------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BACKEND_PORT`      | `8081`    | backend ports   | Host loopback port publishing the containerized backend; this is what the Astro dev server talks to.                                                        |
-| `WEB_PORT`          | `8080`    | web ports       | Host port for the static website.                                                                                                                            |
-| `BLOG_PORT`         | `4000`    | blog ports      | Host port for the blog; `4000` matches `make blog-dev`.                                                                                                      |
-| `REQUIRED_HUGEPAGES`| `128`     | backend runtime | 2-MiB hugepages the entrypoint allocates when the host has fewer: `ceil(max_concurrent_vms × 64 / 2)`. Changing the VM count itself means editing `docker/config.toml` and rebuilding the image. |
-| `FC_VERSION`        | `v1.16.1` | backend build   | Firecracker release installed alongside the in-process VMM.                                                                                                  |
-| `KERNEL_VERSION`    | `6.18.2`  | backend build   | Patched kernel version; must stay compatible with `verifier-provenance.patch` and `backend/includes/task.h`.                                                 |
+| Variable             | Default   | Used by         | Purpose                                                                                                                                                                                          |
+| -------------------- | --------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `BACKEND_PORT`       | `8081`    | backend ports   | Host loopback port publishing the containerized backend; this is what the Astro dev server talks to.                                                                                             |
+| `WEB_PORT`           | `8080`    | web ports       | Host port for the static website.                                                                                                                                                                |
+| `BLOG_PORT`          | `4000`    | blog ports      | Host port for the blog; `4000` matches `make blog-dev`.                                                                                                                                          |
+| `REQUIRED_HUGEPAGES` | `128`     | backend runtime | 2-MiB hugepages the entrypoint allocates when the host has fewer: `ceil(max_concurrent_vms × 64 / 2)`. Changing the VM count itself means editing `docker/config.toml` and rebuilding the image. |
+| `FC_VERSION`         | `v1.16.1` | backend build   | Firecracker release installed alongside the in-process VMM.                                                                                                                                      |
+| `KERNEL_VERSION`     | `6.18.2`  | backend build   | Patched kernel version; must stay compatible with `verifier-provenance.patch` and `backend/includes/task.h`.                                                                                     |
 
 Web and blog toolchain build args (`EMSDK_VERSION`, `NODE_VERSION`, `NGINX_VERSION`, `RUBY_VERSION`) default inside the Dockerfiles; override them per build with `docker compose build --build-arg KEY=VALUE`.
 
 **Backend** — no `.env`; local runs read `config.toml` from the working directory:
 
-| Variable                  | Used by                         | Purpose                                                     |
-| ------------------------- | ------------------------------- | ------------------------------------------------------------ |
-| `REQUIRED_HUGEPAGES`      | `docker/entrypoint-backend.sh`  | Same as the Compose row above.                               |
-| `EBPF_PARTY_TEST_VMLINUX` | `cargo test --test diag_golden` | Overrides the patched-kernel path for diagnostic fixtures.   |
+| Variable                  | Used by                         | Purpose                                                        |
+| ------------------------- | ------------------------------- | -------------------------------------------------------------- |
+| `REQUIRED_HUGEPAGES`      | `docker/entrypoint-backend.sh`  | Same as the Compose row above.                                 |
+| `EBPF_PARTY_TEST_VMLINUX` | `cargo test --test diag_golden` | Overrides the patched-kernel path for diagnostic fixtures.     |
 | `UPDATE_GOLDEN`           | `cargo test --test diag_golden` | Regenerates golden fixtures instead of comparing against them. |
 
 **Blog** — no `.env`; site settings live in `blog/_config.yml` (`url`, `baseurl`, `main_site`, timezone). `make blog` and the blog image build set `JEKYLL_ENV=production` for production SEO/RSS output; `make blog-dev` serves in development mode.
@@ -299,7 +299,7 @@ Then rebuild frontend pages, backend, and guest rootfs; test a correct answer, w
 | Backend unit/DWARF tests  | From `backend/`: `cargo test --lib` and `cargo test --test dwarf_test`; Rust dependencies still require Firecracker setup, but these tests do not boot a VM.                                                                                                      |
 | Diagnostic goldens        | From `backend/`: `cargo test --test diag_golden`; requires KVM, rootfs, patched kernel, `./clang`, and a compatible `includes/task.h.pch`. Override kernel with `EBPF_PARTY_TEST_VMLINUX`; regenerate with `UPDATE_GOLDEN=1`, never hand-edit unverified goldens. |
 | Nginx smoke test          | `./scripts/test-web-nginx.sh`; Docker + curl; tests optional-backend startup/proxying using temporary containers/networks.                                                                                                                                        |
-| Blog                      | `make blog-test` (Ruby helpers/generated site in temporary destinations); `make blog-check` adds production build and Jekyll doctor. The same build/test/doctor sequence runs inside `docker compose build blog`.   |
+| Blog                      | `make blog-test` (Ruby helpers/generated site in temporary destinations); `make blog-check` adds production build and Jekyll doctor. The same build/test/doctor sequence runs inside `docker compose build blog`.                                                 |
 
 **Common blockers:** execution returns 502 → start/check the backend (`docker compose logs backend`); hugepage startup failure → verify host allocation and configured VM count; missing kernel → reconcile artifact/config paths; editor WASM errors → check all three generated TCC files and rebuild; missing lesson → check metadata/content/starter references. Do not expect a stock kernel to provide provenance diagnostics, or a static website-only deployment to execute programs.
 
