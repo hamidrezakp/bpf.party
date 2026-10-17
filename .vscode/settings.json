@@ -45,6 +45,7 @@
     "rustc",
     "rustup",
     "sched",
+    "shiki",
     "SIOCSIFADDR",
     "SIOCSIFFLAGS",
     "Sockaddr",
