@@ -162,7 +162,8 @@ COPY --link backend/includes /app/includes
 COPY --link docker/config.toml /app/config.toml
 COPY --link --chmod=755 docker/entrypoint-backend.sh /app/entrypoint-backend.sh
 
+ENV BACKEND_PORT=8081
 EXPOSE 8081
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD curl -fsS http://127.0.0.1:8081/metrics || exit 1
+  CMD curl -fsS "http://127.0.0.1:${BACKEND_PORT}/metrics" || exit 1
 ENTRYPOINT ["/app/entrypoint-backend.sh"]

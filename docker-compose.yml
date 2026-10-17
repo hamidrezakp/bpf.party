@@ -1,5 +1,5 @@
 # Variable defaults are read from a root `.env` file (see .env.example):
-# published ports, hugepages, and backend build versions can be overridden
+# listening ports, hugepages, and backend build versions can be overridden
 # without editing this file. Web/blog toolchain build args (EMSDK_VERSION,
 # NODE_VERSION, NGINX_VERSION, RUBY_VERSION) default inside the Dockerfiles
 # and can be overridden with `docker compose build --build-arg KEY=VALUE`.
@@ -18,18 +18,16 @@ services:
     # allocates the hugepages itself (REQUIRED_HUGEPAGES, default 128 pages
     # for max_concurrent_vms = 4) and needs cgroup/KVM access for the VMs.
     privileged: true
+    network_mode: host
     devices:
       - /dev/kvm
     cap_add:
       - NET_ADMIN
-    # Loopback-only convenience for the host Astro dev server, whose dev-mode
-    # API base is http://localhost:8081 (overridable with PUBLIC_API_BASE_URL
-    # in website/.env). The web service reaches the backend over the Compose
-    # network (nginx proxies /run_code/ and /metrics).
+    # All services share the host network. The backend binds loopback only;
+    # nginx proxies /run_code/ and /metrics to it on BACKEND_PORT.
     environment:
+      BACKEND_PORT: ${BACKEND_PORT:-8081}
       REQUIRED_HUGEPAGES: ${REQUIRED_HUGEPAGES:-128}
-    ports:
-      - "127.0.0.1:${BACKEND_PORT:-8081}:8081"
     restart: unless-stopped
 
   web:
@@ -37,8 +35,11 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.website
-    ports:
-      - "${WEB_PORT:-8080}:8080"
+    network_mode: host
+    environment:
+      WEB_PORT: ${WEB_PORT:-8080}
+      BACKEND_HOST: ${BACKEND_HOST:-127.0.0.1}
+      BACKEND_PORT: ${BACKEND_PORT:-8081}
     restart: unless-stopped
 
   blog:
@@ -46,9 +47,8 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.blog
-    # Port 4000 matches `make blog-dev`, so the containerized blog and the
-    # local Jekyll dev server are interchangeable; inside the container nginx
-    # listens on unprivileged 8080 like `web`. Independent of backend/web.
-    ports:
-      - "${BLOG_PORT:-4000}:8080"
+    network_mode: host
+    # Independent of backend/web; 4000 matches `make blog-dev`.
+    environment:
+      BLOG_PORT: ${BLOG_PORT:-4000}
     restart: unless-stopped
