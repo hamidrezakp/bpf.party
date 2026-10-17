@@ -1,4 +1,4 @@
-.git
+.git*
 .cursor
 .build
 firecracker
@@ -19,3 +19,4 @@ vmlinux
 docker/artifacts/backend
 docker/artifacts/rootfs.ext4
 docker/artifacts/vmlinux
+*.zip

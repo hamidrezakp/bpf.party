@@ -9,3 +9,4 @@ missing_diagnostic/
 firecracker/
 firecracker-spawn/
 .build/
+*.zip
